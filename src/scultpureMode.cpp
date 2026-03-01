@@ -253,28 +253,28 @@ void sculptureMain()
     //---------------------------------------- TURN ON ROUTINE ----------------------------------------//
     initMatrizPlus(matrizPlusSculpture);
     BleChess.setMode(1);
-    if (testModeSculpture == false) // Modo normal
+    if (testModeSculpture == false) // Normal mode
     {
         Serial.printf("\n \n=======================SCULPTURE MAIN======================= \n \n");
         centrarPiezasIniSc(0, matrizPlusSculpture);
         compareMatrixVsSensorsPlus(COMPARE_IMPRIME | COMPARE_CENTRA, matrizPlusSculpture);
         BleChess.sendMatrixToApp("CLEAN: Match.", matrizBinSc, matrizPlusSculpture);
     }
-    else // Modo test
+    else // Test mode
     {
         Serial.printf("\n \n======================SCULPTURE MAIN TEST MODE======================= \n \n");
         timeSculpture = millis();
     }
     //---------------------------------------- TURN ON ROUTINE ----------------------------------------//
 
-    do // Ciclo para jugar siguiente partida
+    do // Loop to play the next game
     {
         int cuentaMovimientos = 0;
         if (BleChess.gameToPlay(0) == -1)
         {
             while (BleChess.gameToPlay(0) == -1 && BleChess.getModeChess() == 1)
             {
-                // si presionan play en la app  y no hay juegos en now playing entonces mandar otra vez pausa y mensaje de error
+                // if the user presses play in the app and there are no games in now playing, send pause again and an error message
                 if (BleChess.getPauseInfo() == 0)
                 {
                     BleChess.setPauseInfo(1);
@@ -287,7 +287,7 @@ void sculptureMain()
 
         int retry = 0;
         int gameToPlay = BleChess.gameToPlay(0);
-        String fullMoves = readFromFileSc(gameToPlay); // Lee el archivo de la partida actual
+        String fullMoves = readFromFileSc(gameToPlay); // Read the file for the current game
         while (fullMoves == "EMPTY" && retry < 3)
         {
             fullMoves = readFromFileSc(gameToPlay);
@@ -310,34 +310,34 @@ void sculptureMain()
             int moveType = 0; // -1 dont move, 0 move back, 1 move next
             int pauseInfo = BleChess.getPauseInfo();
 
-            if (previousPause != pauseInfo) // lo utilziamos para enviar una sola vez el estado de pausa
+            if (previousPause != pauseInfo) // used to send the pause state only once
             {
                 BleChess.setState(pauseInfo == 1 ? "Paused" : "Running");
                 previousPause = pauseInfo;
             }
 
-            if (gameToPlay != BleChess.gameToPlay(0) || BleChess.getModeChess() != 1) // si se cambio de juego, de modo
+            if (gameToPlay != BleChess.gameToPlay(0) || BleChess.getModeChess() != 1) // if the game or mode changed
             {
                 break;
             }
 
-            if (pauseInfo != 1) // si no esta en pausa, en autoplayback apagado nos conviene que de alguna forma metamos a pausa el juego cuando esta en el ultimo movimiento
+            if (pauseInfo != 1) // if not paused, in non-autoplayback mode it is useful to pause the game when it reaches the last move
             {
                 moveType = 1;
                 if (cuentaMovimientos != 0) // first move ins done inmediatley
                 {
-                    int timeToMove = BleChess.getTimeToMove() * 1000; // se multiplica por 1000 para convertir a milisegundos
+                    int timeToMove = BleChess.getTimeToMove() * 1000; // multiplied by 1000 to convert to milliseconds
                     unsigned long timeToMoveStart = millis();
                     bool getOutofWhile = false;
-                    while (millis() - timeToMoveStart < timeToMove) // se espera el tiempo de movimiento, deberiamos agregar otras condiciones para salir del ciclo
+                    while (millis() - timeToMoveStart < timeToMove) // wait for the move time; other exit conditions could be added
                     {
-                        if (gameToPlay != BleChess.gameToPlay(0) || BleChess.getModeChess() != 1) // si se cambio de juego, de modo
+                        if (gameToPlay != BleChess.gameToPlay(0) || BleChess.getModeChess() != 1) // if the game or mode changed
                         {
                             getOutofWhile = true;
                             break;
                         }
                     }
-                    if (getOutofWhile) // si se cambio de juego, de modo
+                    if (getOutofWhile) // if the game or mode changed
                     {
                         break;
                     }
@@ -349,7 +349,7 @@ void sculptureMain()
                 // moveType = (singleMove == 1) ? 1 : (singleMove == 0) ? 2
                 //                                                    : 0;
 
-                if (cuentaMovimientos >= movementsinGame) // si ya se termino el juego
+                if (cuentaMovimientos >= movementsinGame) // if the game has already ended
                 {
                     if (moveType == 1)
                     {
@@ -384,7 +384,7 @@ void sculptureMain()
             else if (moveType == 0)
             {
                 movimientoSimplificado(fullMoves[cuentaMovimientos - 3] - '0', fullMoves[cuentaMovimientos - 2] - '0', fullMoves[cuentaMovimientos - 5] - '0', fullMoves[cuentaMovimientos - 4] - '0', matrizPlusSculpture);
-                if (fullMoves[cuentaMovimientos - 6] == '/' || cuentaMovimientos - 6 <= 0) // se agrega la condicion para cuando se regresa hasta el inicio.
+                if (fullMoves[cuentaMovimientos - 6] == '/' || cuentaMovimientos - 6 <= 0) // condition added for when rewinding to the beginning
                 {
                     cuentaMovimientos -= 5;
                 }
@@ -418,7 +418,7 @@ void sculptureMain()
 
         if (cuentaMovimientos >= (int)(movementsinGame * 0.85)) //
         {
-            cuentapatternsToHome++; // Paso el primer juego. Aumenta el contador de juegos
+            cuentapatternsToHome++; // First game done. Increment the game counter.
         }
 
         if (cuentapatternsToHome >= patternsToHomeInt)
@@ -440,13 +440,13 @@ void sculptureMain()
 }
 
 void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
-{ // 0 inicializa el tablero
-    // 1 usa el tablero en memoria
-    // 2 trata de corregir el problema con piezas especificas, si hay una pieza pero el sensor no la detecta va y le da un jalon.
+{ // 0 initializes the board
+    // 1 uses the board in memory
+    // 2 tries to fix the problem with specific pieces: if a piece is present but the sensor does not detect it, it nudges it.
     int numPoints = 0;
     int numPointsFinal = 0;
     int outPos = 8;
-    int distanciaCentrado = 1; // debe ser diferente de 0. Si no, hay error de memoria.
+    int distanciaCentrado = 1; // must be non-zero; otherwise a memory error occurs.
     bool sensorsMatrix[10][10];
 
     BleChess.setState("Setting Up");
@@ -458,7 +458,7 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
 
     detectChessBoard(sensorsMatrix);
 
-    // Solo se ocupa para impresion
+    // Used only for printing
     char matrizAux[10][10];
     for (int j = 0; j < 10; j++)
     {
@@ -491,69 +491,69 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
                 int coordXEnd = coordXBase;
                 int coordYEnd = coordYBase;
 
-                // ================primera trayectoria================
-                if (i >= 1 && i <= 8 && j >= 1 && j <= 8) // Dentro de tablero
+                // ================first trajectory================
+                if (i >= 1 && i <= 8 && j >= 1 && j <= 8) // Inside the board
                 {
                     coordXEnd -= outPos;
                     coordYEnd += outPos;
                 }
-                else if (i == 0) // cementerio izquierdo
+                else if (i == 0) // left graveyard
                 {
                     coordYEnd -= outPos - 2;
                 }
-                else if (i == 9) // cementerio derecho
+                else if (i == 9) // right graveyard
                 {
                     coordYEnd += outPos + 2;
                 }
-                else if (j == 0) // cementerio superior
+                else if (j == 0) // top graveyard
                 {
                     coordXEnd += outPos;
                     coordYEnd -= outPos;
                 }
-                else if (j == 9) // cementerio inferior
+                else if (j == 9) // bottom graveyard
                 {
                     coordXEnd += outPos;
                     coordYEnd += outPos;
                 }
 
                 float **trayectoriaAux = interpolatePoints(coordXBase, coordYBase, coordXEnd, coordYEnd, numPointsFinal);
-                // ================primera trayectoria================
+                // ================first trajectory================
 
-                // ================segunda trayectoria================
+                // ================second trajectory================
                 int coordXInit = coordXEnd;
                 int coordYInit = coordYEnd;
 
                 coordXEnd = coordXBase;
                 coordYEnd = coordYBase;
 
-                if (i >= 1 && i <= 8 && j >= 1 && j <= 8) // Dentro de tablero
+                if (i >= 1 && i <= 8 && j >= 1 && j <= 8) // Inside the board
                 {
                     coordXEnd += distanciaCentrado;
                     coordYEnd -= distanciaCentrado;
                 }
-                else if (i == 0) // cementerio izquiero
+                else if (i == 0) // left graveyard
                 {
                     coordYEnd += distanciaCentrado + 2;
                 }
-                else if (i == 9) // cementerio derecho
+                else if (i == 9) // right graveyard
                 {
                     coordYEnd -= distanciaCentrado - 2;
                 }
-                else if (j == 0) // cementerio superior
+                else if (j == 0) // top graveyard
                 {
                     coordXEnd -= distanciaCentrado;
                     coordYEnd += distanciaCentrado;
                 }
-                else if (j == 9) // cementerio inferior
+                else if (j == 9) // bottom graveyard
                 {
                     coordXEnd -= distanciaCentrado;
                     coordYEnd -= distanciaCentrado;
                 }
                 float **interpolatedPoints = interpolatePoints(coordXInit, coordYInit, coordXEnd, coordYEnd, numPoints);
 
-                // ================segunda trayectoria================
+                // ================second trajectory================
 
-                //==================combina vectores===================
+                //==================combine vectors===================
                 int totalPoints = numPointsFinal + numPoints;
 
                 float **combinedPoints = new float *[totalPoints];
@@ -562,17 +562,17 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
                     combinedPoints[i] = new float[2];
                 }
 
-                for (int i = 0; i < numPointsFinal; i++) // Llena el vector combinado con la primera trayectoria que saca.
+                for (int i = 0; i < numPointsFinal; i++) // Fill the combined vector with the first trajectory.
                 {
                     combinedPoints[i][0] = trayectoriaAux[i][0];
                     combinedPoints[i][1] = trayectoriaAux[i][1];
                 }
-                for (int i = 0; i < numPoints; i++) // Llena el vector combinado con la segunda trayectoria que saca.
+                for (int i = 0; i < numPoints; i++) // Fill the combined vector with the second trajectory.
                 {
                     combinedPoints[i + numPointsFinal][0] = interpolatedPoints[i][0];
                     combinedPoints[i + numPointsFinal][1] = interpolatedPoints[i][1];
                 }
-                //==================combina vectores===================
+                //==================combine vectors===================
 
                 if (trayectoriaAux != nullptr)
                 {
@@ -581,7 +581,7 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
                         delete[] trayectoriaAux[i];
                     }
                     delete[] trayectoriaAux;
-                    trayectoriaAux = nullptr; // Evitar puntero colgante
+                    trayectoriaAux = nullptr; // Avoid dangling pointer
                 }
                 if (interpolatedPoints != nullptr)
                 {
@@ -590,9 +590,9 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
                         delete[] interpolatedPoints[i];
                     }
                     delete[] interpolatedPoints;
-                    interpolatedPoints = nullptr; // Evitar puntero colgante
+                    interpolatedPoints = nullptr; // Avoid dangling pointer
                 }
-                // Llama a la función con el vector combinado
+                // Call the function with the combined vector
                 accelRampV3(combinedPoints, totalPoints, 100);
 
                 if (combinedPoints != nullptr)
@@ -628,16 +628,16 @@ void centrarPiezasIniSc(int mode, char matrixToCenter[10][10])
 
 void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrixToReorder[10][10])
 {
-    // modo 0: Reordenar a la posicion inicial
-    // modo 1: Reordenar blancas
-    // modo 2: Reordenar negras
-    // modo 3: Reordenar a la posicion custom
+    // mode 0: Reorder to the initial position
+    // mode 1: Reorder white pieces
+    // mode 2: Reorder black pieces
+    // mode 3: Reorder to a custom position
     reorderChessboard = true;
 
-    // Las matrices estan hechas asi [++fila][++columna]
+    // Matrices are indexed as [++row][++column]
     Serial.println("-----------------------------------REORDENAMIENTO AUTOMATICO");
 
-    // GENERAR MATRIZ OBJETIVO
+    // GENERATE TARGET MATRIX
     char vectChessW[10] = {'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'};
     char vectChessB[10] = {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'};
     for (int i = 0; i < 10; i++)
@@ -647,7 +647,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
             matrizObjetivo[i][j] = '.';
         }
     }
-    if (modo == 0) // Reordenar a la posicion inicial
+    if (modo == 0) // Reorder to the initial position
     {
         for (int i = 1; i < 9; i++)
         {
@@ -667,7 +667,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
             matrizObjetivo[i][7] = 'P';
         }
     }
-    else // Reordenar a la posicion custom
+    else // Reorder to the custom position
     {
         for (int j = 0; j < 10; j++)
         {
@@ -678,10 +678,10 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
         }
     }
 
-    // ENMASCARAR PIEZAS QUE NO NECESITAN MOVERSE, MASCARA
-    for (int j = 0; j < 10; j++) // columna
+    // MASK PIECES THAT DON'T NEED TO MOVE
+    for (int j = 0; j < 10; j++) // column
     {
-        for (int i = 0; i < 10; i++) // fila
+        for (int i = 0; i < 10; i++) // row
         {
             if (matrizObjetivo[i][j] == matrixToReorder[i][j] && matrixToReorder[i][j] != '.')
             {
@@ -695,34 +695,34 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
 
     Serial.println("Matriz Objetivo Inicial: ");
     printMatrizGenerica(matrizObjetivo, 10, 10);
-    // Detectar pos inicial y final
+    // Detect initial and final positions
 
-    for (int expColObj = 0; expColObj < 10; expColObj++) // Explora Columnas de la matrizObjetivo
+    for (int expColObj = 0; expColObj < 10; expColObj++) // Explore columns of the target matrix
     {
-        for (int expFilObj = 0; expFilObj < 10; expFilObj++) // Explora Filas de la matrizObjetivo
+        for (int expFilObj = 0; expFilObj < 10; expFilObj++) // Explore rows of the target matrix
         {
             detectChessBoard(matrizBinSc);
             for (int i = 0; i < 10; i++)
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    if (matrixToReorder[j][i] == '.' && matrizObjetivo[j][i] != 'L' && matrizObjetivo[j][i] != '.' && !matrizBinSc[j][i]) // Si en la matriz actual no hay pieza, la matriz objetivo tiene una pieza y se detecto que el usuario puso algo.
+                    if (matrixToReorder[j][i] == '.' && matrizObjetivo[j][i] != 'L' && matrizObjetivo[j][i] != '.' && !matrizBinSc[j][i]) // If the current matrix has no piece, the target matrix has a piece, and the sensor detects the user placed something.
                     {
-                        matrizObjetivo[j][i] = 'L';  // llenamos los espacios para que no se vuelva a buscar ahi.
-                        matrixToReorder[j][i] = 'L'; // llenamos los espacios para que no se vuelva a buscar ahi.
+                        matrizObjetivo[j][i] = 'L';  // mark this space so it is not searched again.
+                        matrixToReorder[j][i] = 'L'; // mark this space so it is not searched again.
                     }
                 }
             }
 
-            if (matrizObjetivo[expFilObj][expColObj] != '.' && matrizObjetivo[expFilObj][expColObj] != 'L') // Si hay una pieza que acomodar en matriz Objetivo y no es una pieza que ya esta en su lugar
+            if (matrizObjetivo[expFilObj][expColObj] != '.' && matrizObjetivo[expFilObj][expColObj] != 'L') // If there is a piece to place in the target matrix and it is not already in position
             {
                 // Serial.println("==============================================================NEXT REORDER");
                 // Serial.println("Matriz Objetivo: ");
                 // printMatrizGenerica(matrizObjetivo, 10, 10);
                 // Serial.println("Matriz Actual: ");
                 // printMatrizGenerica(matrixToReorder, 10, 10);
-                // Buscamos su coincidencia en la matrizPlus
-                // Serial.print("1. Siguiente pieza faltante en matriz Objetivo: ");
+                // Look for its match in matrizPlus
+                // Serial.print("1. Next missing piece in target matrix: ");
                 // Serial.println(matrizObjetivo[expFilObj][expColObj]);
 
                 int flagPushOutStyle = 0;
@@ -730,18 +730,18 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                 int posfinalEstorboK = 0;
 
                 int piezaCercanaInt = buscarPosicionCercanaPieza(expFilObj, expColObj, matrizObjetivo[expFilObj][expColObj], matrixToReorder);
-                int piezaCercaObjFila = piezaCercanaInt / 10; // Trae la fila
-                int piezaCercaObjCol = piezaCercanaInt % 10;  // Trae la columna
+                int piezaCercaObjFila = piezaCercanaInt / 10; // Get the row
+                int piezaCercaObjCol = piezaCercanaInt % 10;  // Get the column
                 if (piezaCercanaInt != -1)
                 {
-                    if (matrixToReorder[expFilObj][expColObj] != '.' || matrizBinSc[expFilObj][expColObj] == 0) // Si es diferente de vacio, hay una pieza estorbando en el destino
+                    if (matrixToReorder[expFilObj][expColObj] != '.' || matrizBinSc[expFilObj][expColObj] == 0) // If the destination is not empty, there is a blocking piece
                     {
-                        // Serial.println("2. Hay una pieza estorbando en el objetivo");
-                        for (int l = 0; l < 10 && flagPushOutStyle != 1; l++) // Explora Columnas de la matrizObjetivo
+                        // Serial.println("2. There is a blocking piece at the target position");
+                        for (int l = 0; l < 10 && flagPushOutStyle != 1; l++) // Explore columns of the target matrix
                         {
-                            for (int k = 0; k < 10 && flagPushOutStyle != 1; k++) // Explora Filas de la matrizObjetivo
+                            for (int k = 0; k < 10 && flagPushOutStyle != 1; k++) // Explore rows of the target matrix
                             {
-                                if (matrizObjetivo[k][l] == matrixToReorder[expFilObj][expColObj] && (matrixToReorder[k][l] == '.' || matrizBinSc[k][l] == 1)) // Si la pieza que estorba en el objetivo se necesita en otra parte de la matrizObjetivo y esa posicion esta vacia
+                                if (matrizObjetivo[k][l] == matrixToReorder[expFilObj][expColObj] && (matrixToReorder[k][l] == '.' || matrizBinSc[k][l] == 1)) // If the blocking piece is needed elsewhere in the target matrix and that position is empty
                                 {
                                     flagPushOutStyle = 1;
                                     posfinalEstorboK = k;
@@ -749,45 +749,45 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                                 }
                             }
                         }
-                        if (flagPushOutStyle == 1) // Si hay una pieza que estorba en el objetivo y se necesita en otra parte de la matrizObjetivo y esa posicion esta vacia
+                        if (flagPushOutStyle == 1) // If the blocking piece is needed elsewhere and that position is empty
                         {
-                            // Serial.println("2.1 Moviendo pieza SECUNDARIA a su OBJETIVO");
+                            // Serial.println("2.1 Moving SECONDARY piece to its TARGET");
                             movimientoSimplificado(expFilObj, expColObj, posfinalEstorboK, posfinalEstorboL, matrixToReorder);
-                            matrizObjetivo[posfinalEstorboK][posfinalEstorboL] = 'L'; // llenamos los espacios para que no se vuelva a buscar ahi.
+                            matrizObjetivo[posfinalEstorboK][posfinalEstorboL] = 'L'; // mark this space so it is not searched again.
 
-                            // El lugar ya deberia estar vacio, entonces movemos la pieza
-                            // Serial.println("2.1.1 Moviendo pieza PRIMARIA a su OBJETIVO");
+                            // The destination should now be empty, so move the piece
+                            // Serial.println("2.1.1 Moving PRIMARY piece to its TARGET");
                             movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder);
-                            matrizObjetivo[expFilObj][expColObj] = 'L'; // llenamos los espacios para que no se vuelva a buscar ahi.
+                            matrizObjetivo[expFilObj][expColObj] = 'L'; // mark this space so it is not searched again.
                         }
                         else
                         {
-                            /* Primero tendriamos que mover la pieza que estorba*/
-                            int posVacia = buscarPosicionCercanaVacia(expFilObj, expColObj, matrixToReorder); // Trae un valor entero
-                            int posVaciaFila = posVacia / 10;                                                 // Trae la fila
-                            int posVaciaCol = posVacia % 10;                                                  // Trae la columna
+                            /* First we need to move the blocking piece */
+                            int posVacia = buscarPosicionCercanaVacia(expFilObj, expColObj, matrixToReorder); // Returns an integer value
+                            int posVaciaFila = posVacia / 10;                                                 // Get the row
+                            int posVaciaCol = posVacia % 10;                                                  // Get the column
 
-                            // Serial.println("2.2 Moviendo pieza SECUNDARIA a espacio VACIO");
-                            movimientoSimplificado(expFilObj, expColObj, posVaciaFila, posVaciaCol, matrixToReorder); // Mueve la pieza que estorba, sale cuando se quito la pieza estorbando
+                            // Serial.println("2.2 Moving SECONDARY piece to empty space");
+                            movimientoSimplificado(expFilObj, expColObj, posVaciaFila, posVaciaCol, matrixToReorder); // Move the blocking piece; returns when it has been removed
 
-                            // El lugar ya deberia estar vacio, entonces movemos la pieza
-                            // Serial.println("2.2.1 Moviendo pieza PRIMARIA a su OBJETIVO");
-                            movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // movemos la pieza a su lugar objetivo
-                            matrizObjetivo[expFilObj][expColObj] = 'L';                                                         // llenamos los espacios para que no se vuelva a buscar ahi.
+                            // The destination should now be empty, so move the piece
+                            // Serial.println("2.2.1 Moving PRIMARY piece to its TARGET");
+                            movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // move the piece to its target position
+                            matrizObjetivo[expFilObj][expColObj] = 'L';                                                         // mark this space so it is not searched again.
                         }
                     }
                     else
                     {
 
-                        // Serial.println("3. Moviendo pieza PRIMARIA a su OBJETIVO");
-                        movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // movemos la pieza a su lugar objetivo
+                        // Serial.println("3. Moving PRIMARY piece to its TARGET");
+                        movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // move the piece to its target position
                         matrizObjetivo[expFilObj][expColObj] = 'L';
-                        // llenamos los espacios apra que no se vuelva a buscar ahi.
+                        // mark these spaces so they are not searched again.
                     }
                 }
                 else
                 {
-                    // Serial.println("4. EXCPECION: no hay pieza, saltar");
+                    // Serial.println("4. EXCEPTION: no piece found, skipping");
                     matrixToReorder[expFilObj][expColObj] = matrizObjetivo[expFilObj][expColObj];
                 }
             }
@@ -803,7 +803,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
     }
     if (modo == 0)
     {
-        if (modo == 0) // Reordenar a la posicion inicial
+        if (modo == 0) // Reorder to the initial position
         {
             for (int i = 1; i < 9; i++)
             {
@@ -851,10 +851,10 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
     bool matrizBinScAux[10][10];
     /* ======================SETUP===================== */
 
-    // convertir matrizPlus de char a bool, si es . o v = true.
-    for (int j = 0; j < 10; j++) // columna
+    // Convert matrizPlus from char to bool: '.' or 'v' = true.
+    for (int j = 0; j < 10; j++) // column
     {
-        for (int i = 0; i < 10; i++) // fila
+        for (int i = 0; i < 10; i++) // row
         {
             matrizPlusSensors[i][j] = matrixToCompare[i][j] == '.';
         }
@@ -864,20 +864,20 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
     if (modo >= 0)
     {
 
-        do // Hasta que sensores coincida con matriz virtual
+        do // Until sensors match the virtual matrix
         {
             piezasOutofPos = 0;
             ciclosHastaSalir++;
-            detectChessBoard(matrizBinSc); // Actualiza las veces necesarias hasta que sale.
+            detectChessBoard(matrizBinSc); // Updates as many times as needed until done.
 
-            // COMPARAMOS SI HAY ALGUNA PIEZA MAL o SI LA MATRIZ CAMBIO
-            for (int j = 0; j < 10; j++) // columna
+            // CHECK IF ANY PIECE IS MISPLACED OR IF THE MATRIX CHANGED
+            for (int j = 0; j < 10; j++) // column
             {
-                for (int i = 0; i < 10; i++) // fila
+                for (int i = 0; i < 10; i++) // row
                 {
-                    piezasOutofPos += (matrizPlusSensors[i][j] != matrizBinSc[i][j]); // incrementa el contador de piezas fuera de posición si no coincide la matriz virtual con la de sensores
-                    difSensMatrix += (matrizBinScAux[i][j] != matrizBinSc[i][j]);     // incrementa el contador de movimientos de piezas si no coincide la matriz de sensores actual con la anterior
-                    matrizBinScAux[i][j] = matrizBinSc[i][j];                         // actualizo matriz de sensores anterior
+                    piezasOutofPos += (matrizPlusSensors[i][j] != matrizBinSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
+                    difSensMatrix += (matrizBinScAux[i][j] != matrizBinSc[i][j]);     // increment the counter of piece movements if the current sensor matrix differs from the previous one
+                    matrizBinScAux[i][j] = matrizBinSc[i][j];                         // update previous sensor matrix
                 }
             }
 
@@ -925,29 +925,29 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
                 Serial.println("");
 
                 difSensMatrix = 0;
-                tiempoInicio = millis(); // Reinicia el contador
+                tiempoInicio = millis(); // Reset the counter
             }
             newMode = BleChess.getModeChess();
-        } while (piezasOutofPos > 0 && (modo & COMPARE_IMPRIME) && newMode.toInt() == 1); // Si hay piezas fuera de lugar, se queda en el ciclo hasta que se acomoden o se cambie el modo de juego.
+        } while (piezasOutofPos > 0 && (modo & COMPARE_IMPRIME) && newMode.toInt() == 1); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
     }
     else
     {
-        do // Hasta que senssores coincida con matriz virtual
+        do // Until sensors match the virtual matrix
         {
             piezasOutofPos = 0;
             ciclosHastaSalir++;
-            detectChessBoard(matrizBinSc); // Actualiza las veces necesarias hasta que sale.
-            /* ======================COMPARAMOS SI HAY ALGUNA PIEZA MAL o SI LA MATRIZ CAMBIO===================== */
-            for (int j = 0; j < 10; j++) // columna
+            detectChessBoard(matrizBinSc); // Updates as many times as needed until done.
+            /* ======================CHECK IF ANY PIECE IS MISPLACED OR IF THE MATRIX CHANGED===================== */
+            for (int j = 0; j < 10; j++) // column
             {
-                for (int i = 0; i < 10; i++) // fila
+                for (int i = 0; i < 10; i++) // row
                 {
-                    piezasOutofPos += (matrizPlusSensors[i][j] != matrizBinSc[i][j]); // incrementa el contador de piezas fuera de posición si no coincide la matriz virtual con la de sensores
-                    difSensMatrix += (matrizBinScAux[i][j] != matrizBinSc[i][j]);     // incrementa el contador de movimientos de piezas si no coincide la matriz de sensores actual con la anterior
-                    matrizBinScAux[i][j] = matrizBinSc[i][j];                         // actualizo matriz de sensores anterior
+                    piezasOutofPos += (matrizPlusSensors[i][j] != matrizBinSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
+                    difSensMatrix += (matrizBinScAux[i][j] != matrizBinSc[i][j]);     // increment the counter of piece movements if the current sensor matrix differs from the previous one
+                    matrizBinScAux[i][j] = matrizBinSc[i][j];                         // update previous sensor matrix
                 }
             }
-            /* ======================COMPARAMOS SI HAY ALGUNA PIEZA MAL O SI LA MATRIZ CAMBIO===================== */
+            /* ======================CHECK IF ANY PIECE IS MISPLACED OR IF THE MATRIX CHANGED===================== */
 
             if (piezasOutofPos == 0)
             {
@@ -955,7 +955,7 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
             }
             else if (piezasOutofPos > 0)
             {
-                // HACER EL SONIDO CADA 5 SEGUNDOS, PERO ENVIAR EL ERROR SOLO CUANDO CAMBIA LA MATRIZ
+                // PLAY SOUND EVERY 5 SECONDS, BUT SEND ERROR ONLY WHEN THE MATRIX CHANGES
                 if (millis() - tiempoInicio >= 5000 || ciclosHastaSalir == 1)
                 {
                     soundHandler(6);
@@ -976,12 +976,12 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
                 return -1;
                 break;
             }
-            // cuando se corrige manda el sonido de que se corrigio
+            // when corrected, play the success sound
             if (ciclosHastaSalir > 1 && piezasOutofPos == 0)
             {
                 soundHandler(5);
             }
-        } while (piezasOutofPos > 0 && newMode.toInt() == 2 && globalConnect == "1"); // Si hay piezas fuera de lugar, se queda en el ciclo hasta que se acomoden o se cambie el modo de juego.
+        } while (piezasOutofPos > 0 && newMode.toInt() == 2 && globalConnect == "1"); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
     }
     return piezasOutofPos;
 }
@@ -994,10 +994,10 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         String error = "ERROR SC-MOV-1. Movement From: " + String(escaqueFilaInit) + String(escaqueColInit) + (" To: ") + String(escaqueFilaEnd) + String(escaqueColEnd) + (" Modo: ") + String(initialMode) + ". Send error code to Phantom Team please.";
         Serial.println("ERROR: Same position. No movement." + error);
         BleChess.sendTestModeError(error);
-        // Bloquear el programa
+        // Block the program
         /*         while (true)
                 {
-                    delay(1000); // Esperar un segundo antes de repetir el mensaje de error
+                    delay(1000); // Wait one second before repeating the error message
                     Serial.println("ERROR: Same position. No movement." + error);
                     BleChess.sendTestModeError(error);
                 } */
@@ -1008,10 +1008,10 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         String error = "ERROR SC-MOV-2. Movement From: " + String(escaqueFilaInit) + String(escaqueColInit) + (" To: ") + String(escaqueFilaEnd) + String(escaqueColEnd) + (" Modo: ") + String(initialMode) + ". Send error code to Phantom Team please.";
         Serial.println("ERROR: Out of bounds. No movement." + error);
         BleChess.sendTestModeError(error);
-        // Bloquear el programa
+        // Block the program
         /*         while (true)
                 {
-                    delay(1000); // Esperar un segundo antes de repetir el mensaje de error
+                    delay(1000); // Wait one second before repeating the error message
                     Serial.println("ERROR: Out of bounds. No movement." + error);
                     BleChess.sendTestModeError(error);
                 } */
@@ -1059,7 +1059,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         // desfaseSensado();
 
         detectChessBoard(matrizBinSc);
-        // printf("\nSensor inicio: %d final: %d\n", matrizBinSc[escaqueFilaInit][escaqueColInit], matrizBinSc[escaqueFilaEnd][escaqueColEnd]);
+        // printf("\nSensor start: %d end: %d\n", matrizBinSc[escaqueFilaInit][escaqueColInit], matrizBinSc[escaqueFilaEnd][escaqueColEnd]);
         pieceArrived = (matrizBinSc[escaqueFilaInit][escaqueColInit] && !matrizBinSc[escaqueFilaEnd][escaqueColEnd]) ? true : false;
         intentos++;
     }
@@ -1069,7 +1069,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
     {
         if (testModeSculpture == false) // normal
         {
-            while (!pieceArrived && waitforPiece) //( BleChess.getModeChess() == "1" || (BleChess.getModeChess() == "2" && reorderChessboard == false))//(pieceArrived == false && BleChess.getModeChess() == "1") || (BleChess.getModeChess() == "2" && reorderChessboard == false) cuando esta reordenando en playmode que le valga verga.
+            while (!pieceArrived && waitforPiece) //( BleChess.getModeChess() == "1" || (BleChess.getModeChess() == "2" && reorderChessboard == false))//(pieceArrived == false && BleChess.getModeChess() == "1") || (BleChess.getModeChess() == "2" && reorderChessboard == false) when reordering in play mode
             {
                 if (millis() - timerlocal > 10000)
                 {
@@ -1108,7 +1108,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
     chessAnterior[escaqueFilaEnd][escaqueColEnd] = false;
     chessAnterior[escaqueFilaInit][escaqueColInit] = true;
 
-    if (testModeSculpture == false) // Modo normal
+    if (testModeSculpture == false) // Normal mode
     {
         if (BleChess.getModeChess() == 1)
         {
@@ -1121,13 +1121,13 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         deactivateAllMagnets();
 
         unsigned long elapsedTime = millis() - timeSculpture;
-        unsigned long minutes = (elapsedTime / 60000) % 60; // Convertir milisegundos a minutos
-        unsigned long seconds = (elapsedTime / 1000) % 60;  // Convertir milisegundos a segundos
+        unsigned long minutes = (elapsedTime / 60000) % 60; // Convert milliseconds to minutes
+        unsigned long seconds = (elapsedTime / 1000) % 60;  // Convert milliseconds to seconds
         Serial.printf("Elapsed time: %lu min %lu sec\n", minutes, seconds);
         Serial.println("Piece moved successfully.");
         Serial.println();
 
-        if (millis() - timeSculpture > 600000) // 600000) // 10 minutos = 600000
+        if (millis() - timeSculpture > 600000) // 600000) // 10 minutes = 600000
         {
             Serial.println("✓ Sculpture Mode Test Finished");
             BleChess.setMode(4);
@@ -1136,7 +1136,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
     }
 }
 
-//==============================================================MOVIMIENTO=====================================================
+//==============================================================MOVEMENT=======================================================
 void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedbyUser)
 {
     configAndCurrentPosManager(setSpeedbyUser, driverMicroSteps);
@@ -1149,18 +1149,18 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         {
             if (trayectoriaFinal[i][0] == trayectoriaFinal[j][0] && trayectoriaFinal[i][1] == trayectoriaFinal[j][1])
             {
-                // Desplazar todos los elementos posteriores una posición hacia adelante
+                // Shift all subsequent elements one position forward
                 for (int k = j; k < size - 1; k++)
                 {
                     trayectoriaFinal[k][0] = trayectoriaFinal[k + 1][0];
                     trayectoriaFinal[k][1] = trayectoriaFinal[k + 1][1];
                 }
-                size--;         // Reducir el tamaño del array porque hemos eliminado un duplicado
-                removedCount++; // Incrementar el contador de elementos eliminados
+                size--;         // Reduce the array size because a duplicate was removed
+                removedCount++; // Increment the count of removed elements
             }
             else
             {
-                j++; // Solo incrementar j si no hemos eliminado un elemento, para evitar saltarnos comprobaciones
+                j++; // Only increment j if no element was removed, to avoid skipping checks
             }
         }
     }
@@ -1169,7 +1169,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     //===============================================DELETE TRAJECTORY DUPLICATES===============================================
     double **speedperStep = nullptr;
     int **numberofSteps = nullptr;
-    double *timeToPosition = new double[numPointsFinal]; // Reserva espacio para numPointsFinal elementos de tipo double
+    double *timeToPosition = new double[numPointsFinal]; // Allocate space for numPointsFinal elements of type double
 
     numberofSteps = new int *[numPointsFinal];
     for (int i = 0; i < numPointsFinal; i++)
@@ -1184,7 +1184,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     }
     //---------------------------------------Mechanism Tranform----------------------------------------
 
-    for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+    for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
     {
         speedperStep[i][0] = trayectoriaFinal[i][0];
         speedperStep[i][1] = trayectoriaFinal[i][1];
@@ -1194,7 +1194,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     case 0:
         break;
     case 1:
-        for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+        for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
         {
             trayectoriaFinal[i][0] = speedperStep[i][1] * -1;
             ;
@@ -1203,21 +1203,21 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         }
         break;
     case -1:
-        for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+        for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
         {
             trayectoriaFinal[i][0] = speedperStep[i][0] * -1;
             trayectoriaFinal[i][1] = speedperStep[i][1] * -1;
         }
         break;
     case 2:
-        for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+        for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
         {
             trayectoriaFinal[i][0] = speedperStep[i][1];
             trayectoriaFinal[i][1] = speedperStep[i][0] * -1;
         }
         break;
     default:
-        for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+        for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
         {
             trayectoriaFinal[i][0] = speedperStep[i][0];
             trayectoriaFinal[i][1] = speedperStep[i][1];
@@ -1232,18 +1232,18 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     bool electroimanesEnd[5] = {false};
     int electroimanesActivos[5] = {0};
     int contadorElectroactivos = 0;
-    // Definir condiciones para cada electroimán [izquierda, arriba, abajo, derecha]
+    // Define conditions for each electromagnet [left, top, bottom, right]
     int condiciones[5][4] = {
-        {},                     // No se utiliza la posición 0, para que coincida con el índice de los electroimanes
-        {-225, 197, -192, 182}, // Electroimán 1
-        {-214, 234, -152, 192}, // Electroimán 2
-        {-178, 197, -192, 228}, // Electroimán 3
-        {-214, 152, -234, 192}  // Electroimán 4
+        {},                     // Position 0 is not used, so indices match electromagnet numbers
+        {-225, 197, -192, 182}, // Electromagnet 1
+        {-214, 234, -152, 192}, // Electromagnet 2
+        {-178, 197, -192, 228}, // Electromagnet 3
+        {-214, 152, -234, 192}  // Electromagnet 4
     };
 
-    for (int i = 0; i < numPointsFinal; i++) // iteramos cada punto de la trayectoria para ver que electroiman cumple con todas las condiciones. Si cumple, se incrementa el contador de ese electroiman
+    for (int i = 0; i < numPointsFinal; i++) // Iterate over each trajectory point to check which electromagnet meets all conditions. If it does, increment that electromagnet's counter.
     {
-        for (int j = 1; j <= 4; j++) // itera dondiciones de cada electroimán
+        for (int j = 1; j <= 4; j++) // iterate over conditions for each electromagnet
         {
             if (trayectoriaFinal[i][0] >= condiciones[j][0] && trayectoriaFinal[i][1] <= condiciones[j][1] &&
                 trayectoriaFinal[i][1] >= condiciones[j][2] && trayectoriaFinal[i][0] <= condiciones[j][3])
@@ -1257,7 +1257,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         }
     }
 
-    for (int i = 1; i <= 4; i++) // Si un electroiman puede viajar en toda la trayectoria, se agregará a un array de electroimanes activos
+    for (int i = 1; i <= 4; i++) // If an electromagnet can travel the entire trajectory, add it to the active electromagnets array
     {
         if (electroimanes[i] == numPointsFinal)
         {
@@ -1272,11 +1272,11 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
 
 #ifdef MODELFINAL
 
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / -(driverMicroSteps * 5)) + currentYposition;
 #endif
 #ifdef MODELEFRA
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * (driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * (driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / (driverMicroSteps * 5)) + currentYposition;
 #endif
 
@@ -1286,10 +1286,10 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
 
     double minDistance = std::numeric_limits<double>::max();
     //--------------------------------------------------Multiple Electromagnets Movement-------------------------------------------------------
-    if (contadorElectroactivos == 0) // Movimiento Complejo
+    if (contadorElectroactivos == 0) // Complex movement
     {
 
-        for (int i = 1; i <= 4; i++) // Buscamos el electroiman que se encuentra más cerca del punto inicial
+        for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the start point
         {
             if (electroimanes[i] < minDistance && electroimanesInit[i] == true)
             {
@@ -1299,7 +1299,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         }
 
         minDistance = std::numeric_limits<double>::max();
-        for (int i = 1; i <= 4; i++) // Buscamos el electroiman que se encuentra más cerca del punto final
+        for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the end point
         {
             if (electroimanes[i] < minDistance && electroimanesEnd[i] == true)
             {
@@ -1309,14 +1309,14 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         }
 
         calcularOffsets(electroActivoInit, electroOffsetX, electroOffsetY);
-        for (int i = 0; i < (numPointsFinal - electroimanes[electroActivoEnd]); i++) // Sumamos el offset a todos los puntos de la trayectoria 1 y inverse kinematics
+        for (int i = 0; i < (numPointsFinal - electroimanes[electroActivoEnd]); i++) // Apply offset to all points in trajectory 1 and inverse kinematics
         {
             trayectoriaFinal[i][0] = trayectoriaFinal[i][0] + electroOffsetX;
             trayectoriaFinal[i][1] = trayectoriaFinal[i][1] + electroOffsetY;
         }
 
         calcularOffsets(electroActivoEnd, electroOffsetX, electroOffsetY);
-        for (int i = (numPointsFinal - electroimanes[electroActivoEnd]); i < (numPointsFinal); i++) // Sumamos el offset a todos los puntos de la trayectoria 2 y inverse kinematics
+        for (int i = (numPointsFinal - electroimanes[electroActivoEnd]); i < (numPointsFinal); i++) // Apply offset to all points in trajectory 2 and inverse kinematics
         {
             trayectoriaFinal[i][0] = trayectoriaFinal[i][0] + electroOffsetX;
             trayectoriaFinal[i][1] = trayectoriaFinal[i][1] + electroOffsetY;
@@ -1325,19 +1325,19 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     //--------------------------------------------------Multiple Electromagnets Movement-------------------------------------------------------
 
     //--------------------------------------------------One Electromagnets Movement-------------------------------------------------------
-    else // Mvoimiento Simple
+    else // Simple movement
     {
 
-        for (int i = 0; i < contadorElectroactivos; i++) // Buscamos el electroiman que se encuentra más cerca del punto inicial
+        for (int i = 0; i < contadorElectroactivos; i++) // Find the electromagnet closest to the start point
         {
             double deltaX, deltaY, distance;
 
             calcularOffsets(electroimanesActivos[i], electroOffsetX, electroOffsetY);
             deltaX = (trayectoriaFinal[0][0] + electroOffsetX) - currentXposition;
             deltaY = (trayectoriaFinal[0][1] + electroOffsetY) - currentYposition;
-            distance = sqrt(deltaX * deltaX + deltaY * deltaY); // Calculamos la distancia h2 entre el punto inicial y el electroiman
+            distance = sqrt(deltaX * deltaX + deltaY * deltaY); // Calculate the distance between the start point and the electromagnet
 
-            if (distance < minDistance) // Si la distancia es menor a la distancia minima, se actualiza el electroiman activo
+            if (distance < minDistance) // If the distance is less than the minimum distance, update the active electromagnet
             {
                 minDistance = distance;
                 electroActivo = electroimanesActivos[i];
@@ -1345,7 +1345,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         }
 
         calcularOffsets(electroActivo, electroOffsetX, electroOffsetY);
-        for (int i = 0; i < numPointsFinal; i++) // Sumamos el offset a todos los puntos de la trayectoria y inverse kinematics
+        for (int i = 0; i < numPointsFinal; i++) // Apply offset to all trajectory points and inverse kinematics
         {
             trayectoriaFinal[i][0] = trayectoriaFinal[i][0] + electroOffsetX;
             trayectoriaFinal[i][1] = trayectoriaFinal[i][1] + electroOffsetY;
@@ -1370,26 +1370,26 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     //=======================================================INVERSE KINEMATICS=======================================================
 
     //=====================================================SPEED AND ACCELERATION=========================================================
-    float umbralInferior = 0.52;                    // Aproximadamente 30 grados en radianes
-    float umbralSuperior = 2 * PI - umbralInferior; // Cerca de 330 grados en radianes
+    float umbralInferior = 0.52;                    // Approximately 30 degrees in radians
+    float umbralSuperior = 2 * PI - umbralInferior; // Approximately 330 degrees in radians
     std::vector<int> puntosCambioDireccion;
 
     //--------------------------------------------------Calculates Speed-------------------------------------------------------
-    for (int i = 0; i < numPointsFinal; i++) // Itera en cada punto de la trayectoria y asigna una velocidad constante a cada elemento
+    for (int i = 0; i < numPointsFinal; i++) // Iterate over each trajectory point and assign a constant speed to each element
     {
         double deltaX = trayectoriaFinal[i][0] - ((i == 0) ? currentXposition : trayectoriaFinal[i - 1][0]);
         double deltaY = trayectoriaFinal[i][1] - ((i == 0) ? currentYposition : trayectoriaFinal[i - 1][1]);
 
         double distance = sqrt(deltaX * deltaX + deltaY * deltaY);
-        timeToPosition[i] = distance / setSpeedbyUser; // La parte entera de la división es el tiempo que se tarda en llegar a la posición
+        timeToPosition[i] = distance / setSpeedbyUser; // The integer part of the division is the time to reach the position
 
         double currentPositionInStepsX = (i == 0) ? stepper1.currentPosition() : numberofSteps[i - 1][0];
         double currentPositionInStepsY = (i == 0) ? stepper2.currentPosition() : numberofSteps[i - 1][1];
 
-        speedperStep[i][0] = (timeToPosition[i] == 0) ? 0 : ((numberofSteps[i][0] - currentPositionInStepsX) / timeToPosition[i]); // asigna la velocidad a matriz de velociades
-        speedperStep[i][1] = (timeToPosition[i] == 0) ? 0 : ((numberofSteps[i][1] - currentPositionInStepsY) / timeToPosition[i]); // asigna la velocidad a matriz de velocidades
+        speedperStep[i][0] = (timeToPosition[i] == 0) ? 0 : ((numberofSteps[i][0] - currentPositionInStepsX) / timeToPosition[i]); // assign speed to the speed matrix
+        speedperStep[i][1] = (timeToPosition[i] == 0) ? 0 : ((numberofSteps[i][1] - currentPositionInStepsY) / timeToPosition[i]); // assign speed to the speed matrix
 
-        if ((i > 1 && i < numPointsFinal - 1)) // Cambio de direccion, tiene proteccion para no agregar puntos duplicados
+        if ((i > 1 && i < numPointsFinal - 1)) // Direction change; protected against adding duplicate points
         {
             double dirActual = atan2(trayectoriaFinal[i][1] - trayectoriaFinal[i - 1][1], trayectoriaFinal[i][0] - trayectoriaFinal[i - 1][0]);
             double dirSiguiente = atan2(trayectoriaFinal[i + 1][1] - trayectoriaFinal[i][1], trayectoriaFinal[i + 1][0] - trayectoriaFinal[i][0]);
@@ -1405,19 +1405,19 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         //  numberofSteps[i][0], numberofSteps[i][1], speedperStep[i][0], speedperStep[i][1]);
     }
     //--------------------------------------------------Calculates Speed-------------------------------------------------------
-    puntosCambioDireccion.push_back(numPointsFinal - 1); // Agrega el último punto de la trayectoria, es en indices, no en en numero de datos
+    puntosCambioDireccion.push_back(numPointsFinal - 1); // Add the last trajectory point (index-based, not data count)
 
     //--------------------------------------------------Calculates Accelararion-------------------------------------------------------
-    for (int i = 0; i < puntosCambioDireccion.size(); i++) // aceleraciones por segmentos de acuerdo a cambios direccion, Aqui sabemos el numero de segmentos.
+    for (int i = 0; i < puntosCambioDireccion.size(); i++) // Accelerations per segment according to direction changes; here we know the number of segments.
     {
         double segmentTime = 0;
         double timeX = 0;
         double y1, y2, y, a1, a2, c1, c2;
 
-        int inicioSegmento = (i == 0) ? 1 : puntosCambioDireccion[i - 1] + 1; // Inicio del segmento
-        int finSegmento = puntosCambioDireccion[i];                           // Fin del segmento
+        int inicioSegmento = (i == 0) ? 1 : puntosCambioDireccion[i - 1] + 1; // Segment start
+        int finSegmento = puntosCambioDireccion[i];                           // Segment end
 
-        for (int i = inicioSegmento; i <= finSegmento; ++i) // Calcula el tiempo de cada segmento
+        for (int i = inicioSegmento; i <= finSegmento; ++i) // Calculate the time for each segment
         {
             segmentTime = (i == inicioSegmento) ? 0 : segmentTime + timeToPosition[i];
         }
@@ -1438,12 +1438,12 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
             float Y_calculado;
             bool encontrado = false;
 
-            while (!encontrado) // Se busca un c1 dinamico.
+            while (!encontrado) // Search for a dynamic c1 value.
             {
                 double deltaSpeedM1 = abs(speedperStep[inicioSegmento + 2][0] - speedperStep[inicioSegmento + 1][0]);
                 double deltaSpeedM2 = abs(speedperStep[inicioSegmento + 2][1] - speedperStep[inicioSegmento + 1][1]);
 
-                if (deltaSpeedM1 > deltaSpeedM2) // Haremos el calculo con el motor que tenga mayor cambio de velocidad
+                if (deltaSpeedM1 > deltaSpeedM2) // Use the motor with the larger speed change for the calculation
                 {
                     Y_calculado = speedperStep[inicioSegmento + 1][0] * (1 / (1 + exp(-a1 * (-c1))));
                 }
@@ -1452,19 +1452,19 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
                     Y_calculado = speedperStep[inicioSegmento + 1][1] * (1 / (1 + exp(-a1 * (-c1))));
                 }
 
-                if (abs(Y_calculado) < Y_objetivo) // si Y calculado comple el requisito activamos una bandera para que no se cicle de nuevo.
+                if (abs(Y_calculado) < Y_objetivo) // if the calculated Y meets the requirement, set the flag to exit the loop
                 {
                     encontrado = true;
                 }
-                else // Si todavia no se alcanza calculamos otro C1
+                else // If the target is not yet reached, calculate another C1
                 {
-                    c1 += 0.005; // Incrementar C1 en 0.1 y repetir
+                    c1 += 0.005; // Increment C1 by 0.005 and repeat
                 }
             }
         }
-        c2 = segmentTime - c1; // Calcula c2 de acuerdo a c1
+        c2 = segmentTime - c1; // Calculate c2 based on c1
 
-        for (int i = inicioSegmento; i <= finSegmento; i++) // Genera aceleraciones sCurve para cada elemento del segmento
+        for (int i = inicioSegmento; i <= finSegmento; i++) // Generate s-curve accelerations for each element of the segment
         {
             timeX = timeX + ((i == inicioSegmento) ? 0 : timeToPosition[i]);
 
@@ -1478,10 +1478,10 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     }
     //--------------------------------------------------Calculates Accelararion-------------------------------------------------------
     //================================================SPEED AND ACCELERATION=========================================================
-    stepper1.setMaxSpeed(10000000); // Que no nos arruine el calculo de velocidades
-    stepper2.setMaxSpeed(10000000); // Que no nos arruine el calculo de velocidades
+    stepper1.setMaxSpeed(10000000); // Prevent interference with speed calculations
+    stepper2.setMaxSpeed(10000000); // Prevent interference with speed calculations
 
-    // ================================================== MUEVE MOTORES =============================================================
+    // ================================================== MOVE MOTORS =============================================================
     int umbralVelocidad = 10000;
     bool runProtection = false;
     bool graveyardMove = false;
@@ -1529,7 +1529,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
             stepper2.setMaxSpeed(10000000);
         }
         runProtection = false;
-        if (i > 1) // Activa .run function si hay un cambio de velocidad muy grande.
+        if (i > 1) // Activate .run function if there is a very large speed change
         {
             if (speedperStep[i][1] - speedperStep[i - 1][1] > umbralVelocidad || speedperStep[i][0] - speedperStep[i - 1][0] > umbralVelocidad)
             {
@@ -1674,13 +1674,13 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         deactivateAllMagnets();
     }
 
-    // ================================================== MUEVE MOTORES =============================================================
+    // ================================================== MOVE MOTORS =============================================================
 
-    // ================================================= BORRA MEMORIA ==========================================================
+    // ================================================= FREE MEMORY ==========================================================
     if (timeToPosition != nullptr)
     {
-        delete[] timeToPosition;  // Liberar el arreglo completo
-        timeToPosition = nullptr; // Asegurar que el puntero no apunte a una ubicación ya liberada
+        delete[] timeToPosition;  // Free the entire array
+        timeToPosition = nullptr; // Ensure the pointer does not point to a freed location
     }
 
     if (speedperStep != nullptr)
@@ -1702,13 +1702,13 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
         delete[] numberofSteps;
         numberofSteps = nullptr;
     }
-    // En este punto, el tamaño y la capacidad son probablemente iguales.
+    // At this point, the size and capacity are probably equal.
     puntosCambioDireccion.clear();
-    // Ahora el tamaño es 0, pero la capacidad sigue siendo 1000.
+    // Now the size is 0, but the capacity remains 1000.
 
-    // Si realmente necesitas reducir la memoria usada por un vector después de limpiarlo o modificarlo sustancialmente:
+    // If you really need to reduce the memory used by a vector after clearing or substantially modifying it:
     puntosCambioDireccion.shrink_to_fit();
-    // ================================================= BORRA MEMORIA ==========================================================
+    // ================================================= FREE MEMORY ==========================================================
     driver.rms_current(HOLD_CURRENT);
     driver2.rms_current(HOLD_CURRENT);
 }
@@ -1719,42 +1719,42 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     // Serial.print("Activating electromagnet: ");
     // Serial.println(optionElectro);
 
-    // Actualizar el tiempo de activación de los electroimanes
+    // Update the activation time of the electromagnets
     timerMagnets = millis();
 
-    // Inicializar el timer si no está ya inicializado
+    // Initialize the timer if not already initialized
     if (timer2H == NULL)
     {
-        timer2H = timerBegin(3, 80, true); // El prescaler 80 para 1us de resolución con un reloj de 80MHz
+        timer2H = timerBegin(3, 80, true); // Prescaler 80 for 1us resolution with an 80MHz clock
         timerAttachInterrupt(timer2H, &timeEnabled, true);
-        timerAlarmWrite(timer2H, 10000000, true); // 10 segundos
+        timerAlarmWrite(timer2H, 10000000, true); // 10 seconds
         timerAlarmEnable(timer2H);
         // Serial.println("==============================================Timer enabled");
     }
 
     const int magnetPins[4] = {magnet1, magnet2, magnet3, magnet4};
 
-    // Apagar todos los electroimanes inicialmente
+    // Turn off all electromagnets initially
     for (int i = 0; i < 4; ++i)
     {
-        ledcDetachPin(magnetPins[i]); // Desconectar el canal PWM del pin del electroimán
+        ledcDetachPin(magnetPins[i]); // Disconnect the PWM channel from the electromagnet pin
         digitalWrite(magnetPins[i], HIGH);
     }
 
-    // Configurar el canal PWM para estabilizar la potencia
+    // Configure the PWM channel to stabilize power
     const int freq = 60;
     const int ledChannel = 0;
     const int resolution = 8;
 
     ledcSetup(ledChannel, freq, resolution);
 
-    // Verificar si la opción del electroimán es válida
+    // Verify that the electromagnet option is valid
     if (optionElectro >= 1 && optionElectro <= 4)
     {
-        // Adjuntar el canal PWM al pin del electroimán seleccionado
+        // Attach the PWM channel to the selected electromagnet pin
         ledcAttachPin(magnetPins[optionElectro - 1], ledChannel);
 
-        // Establecer la potencia del electroimán
+        // Set the electromagnet power
         ledcWrite(ledChannel, power);
     }
     // Serial.println("Electromagnet activated");
@@ -1764,20 +1764,20 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     // Serial.println("Deactivating all electromagnets");
     const int magnetPins[4] = {magnet1, magnet2, magnet3, magnet4};
 
-    // Desconectar todos los canales PWM de los pines de los electroimanes
+    // Disconnect all PWM channels from the electromagnet pins
     for (int i = 0; i < 4; ++i)
     {
-        ledcDetachPin(magnetPins[i]);      // Desconectar el canal PWM del pin del electroimán
-        digitalWrite(magnetPins[i], HIGH); // Establecer el pin en alto (apagado)
+        ledcDetachPin(magnetPins[i]);      // Disconnect the PWM channel from the electromagnet pin
+        digitalWrite(magnetPins[i], HIGH); // Set the pin high (off)
     }
 
-    // Deshabilitar y detener el timer
+    // Disable and stop the timer
     if (timer2H != NULL)
     {
         timerAlarmDisable(timer2H);
         timerDetachInterrupt(timer2H);
         timerEnd(timer2H);
-        timer2H = NULL; // Asegurarse de que el puntero es NULL después de liberar el timer
+        timer2H = NULL; // Ensure the pointer is NULL after freeing the timer
                         //  Serial.println("==============================================Timer disabled");
     }
     // Serial.println("All electromagnets deactivated");
@@ -1789,31 +1789,31 @@ void activateElectromagnetV2(int optionElectro, int power)
     // Serial.print("Activating electromagnet: ");
     // Serial.println(optionElectro);
 
-    // Actualizar el tiempo de activación de los electroimanes
+    // Update the activation time of the electromagnets
     timerMagnets = millis();
 
-    // Inicializar el timer si no está ya inicializado
+    // Initialize the timer if not already initialized
     if (timer2H == NULL)
     {
-        timer2H = timerBegin(3, 80, true); // El prescaler 80 para 1us de resolución con un reloj de 80MHz
+        timer2H = timerBegin(3, 80, true); // Prescaler 80 for 1us resolution with an 80MHz clock
         timerAttachInterrupt(timer2H, &timeEnabled, true);
-        timerAlarmWrite(timer2H, 10000000, true); // 10 segundos
+        timerAlarmWrite(timer2H, 10000000, true); // 10 seconds
         timerAlarmEnable(timer2H);
         // Serial.println("==============================================Timer enabled");
     }
 
     const int magnetPins[4] = {magnet1, magnet2, magnet3, magnet4};
 
-    // Apagar todos los electroimanes inicialmente
+    // Turn off all electromagnets initially
     for (int i = 0; i < 4; ++i)
     {
-        digitalWrite(magnetPins[i], HIGH); // Apagar el electroimán
+        digitalWrite(magnetPins[i], HIGH); // Turn off the electromagnet
     }
 
-    // Verificar si la opción del electroimán es válida
+    // Verify that the electromagnet option is valid
     if (optionElectro >= 1 && optionElectro <= 4)
     {
-        // Activar el electroimán seleccionado con toda la potencia
+        // Activate the selected electromagnet at full power
         digitalWrite(magnetPins[optionElectro - 1], LOW);
     }
     // Serial.println("Electromagnet activated");
@@ -1824,19 +1824,19 @@ void deactivateAllMagnets()
     // Serial.println("Deactivating all electromagnets");
     const int magnetPins[4] = {magnet1, magnet2, magnet3, magnet4};
 
-    // Apagar todos los electroimanes
+    // Turn off all electromagnets
     for (int i = 0; i < 4; ++i)
     {
-        digitalWrite(magnetPins[i], HIGH); // Establecer el pin en alto (apagado)
+        digitalWrite(magnetPins[i], HIGH); // Set the pin high (off)
     }
 
-    // Deshabilitar y detener el timer
+    // Disable and stop the timer
     if (timer2H != NULL)
     {
         timerAlarmDisable(timer2H);
         timerDetachInterrupt(timer2H);
         timerEnd(timer2H);
-        timer2H = NULL; // Asegurarse de que el puntero es NULL después de liberar el timer
+        timer2H = NULL; // Ensure the pointer is NULL after freeing the timer
                         //  Serial.println("==============================================Timer disabled");
     }
     // Serial.println("All electromagnets deactivated");
@@ -1844,23 +1844,23 @@ void deactivateAllMagnets()
 
 void IRAM_ATTR timeEnabled()
 {
-    // Comparar el tiempo transcurrido con 60000 ms (60 segundos)
+    // Compare elapsed time with 60000 ms (60 seconds)
     if (millis() - timerMagnets > 60000) // 60000
     {
-        deactivateAllMagnets(); // Desactivar todos los electroimanes
+        deactivateAllMagnets(); // Deactivate all electromagnets
         stepper1.disableOutputs();
         stepper2.disableOutputs();
     }
 }
-//==============================================================MOVIMIENTO=====================================================
+//==============================================================MOVEMENT=======================================================
 
-//==========================================================GENERADOR DE TRAYECTORIA=====================================================
+//==========================================================TRAJECTORY GENERATOR======================================================
 float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueFilaEnd, int escaqueColEnd, int &numPointsFinal)
 {
 
     int totalCurvas = 0;
     int numPointsCurva = 0;
-    int numPoints = 0; // Se actualizará según la hipotenusa
+    int numPoints = 0; // Will be updated based on the hypotenuse
     int numPointsAux = 0;
     int numPointsAux2 = 0;
     double arrayCurvas[totalPuntosEnCurva * 3][2];
@@ -1881,14 +1881,14 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
     const float generalOffset = BleChess.getOffsetPieces();
 
     //  Serial.println("generalOffset: " + String(generalOffset));
-    //   ==============================================================genereadores de trayexctorias ==============================================================
-    //   -------------------------------------------------------------------Movimiento directo --------------------------------------------------------------------
-    if (tipodeMov == 0) // movimiento directo
+    //   ==============================================================trajectory generators ==============================================================
+    //   -------------------------------------------------------------------Direct Movement --------------------------------------------------------------------
+    if (tipodeMov == 0) // direct movement
     {
 
-        interpolatedPoints = interpolatePoints(coordXInit, coordYInit, coordXEnd, coordYEnd, numPoints); // Regresa una matriz con los puntos interpolados y tambien apunta numPoints con el numero de puntos interpolados.
+        interpolatedPoints = interpolatePoints(coordXInit, coordYInit, coordXEnd, coordYEnd, numPoints); // Returns a matrix with interpolated points and also sets numPoints.
 
-        numPointsFinal = numPoints + (generalOffset / distanciaEntrePuntos); // el + 1 es por el valor que le agregamos al final de la trayectoria
+        numPointsFinal = numPoints + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
 
         trayectoriaFinal = new float *[numPointsFinal];
         for (int i = 0; i < numPointsFinal; i++)
@@ -1901,20 +1901,20 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
             trayectoriaFinal[i][1] = interpolatedPoints[i][1];
         }
     }
-    // -------------------------------------------------------------------Movimiento directo --------------------------------------------------------------------
+    // -------------------------------------------------------------------Direct Movement --------------------------------------------------------------------
 
-    // -----------------------------------------------------------------Movimiento Entre Lineas --------------------------------------------------------------------
-    else if (tipodeMov == 1) // movimiento entre lineas
+    // -----------------------------------------------------------------Between-Line Movement --------------------------------------------------------------------
+    else if (tipodeMov == 1) // between-line movement
     {
-        moveOnTheLinev2Sc(coordXInit, coordYInit, coordXEnd, coordYEnd, totalCurvas, arrayCurvas); // Regresa un entero numPoints con el numero total de puntos (16 o 24)y un arreglo ARRAYCURVAS con las coordenadas de los puntos
+        moveOnTheLinev2Sc(coordXInit, coordYInit, coordXEnd, coordYEnd, totalCurvas, arrayCurvas); // Returns an integer numPoints with the total number of points (16 or 24) and an ARRAYCURVAS array with the point coordinates
 
         numPointsCurva = totalCurvas * totalPuntosEnCurva;
 
-        if (totalCurvas == 2) // movimiento entre lineas corto con 2 curvas
+        if (totalCurvas == 2) // short between-line movement with 2 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints); // manda a traer los puntos de final de primera curva a inicio de segunda curva
+            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints); // get the points from the end of the first curve to the start of the second curve
 
-            numPointsFinal = numPoints + numPointsCurva + (generalOffset / distanciaEntrePuntos); // el + 1 es por el valor que le agregamos al final de la trayectoria
+            numPointsFinal = numPoints + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
 
             trayectoriaFinal = new float *[numPointsFinal];
             for (int i = 0; i < numPointsFinal; i++)
@@ -1939,12 +1939,12 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
             }
         }
 
-        if (totalCurvas == 3) // movimiento entre lineas largo con 3 curvas
+        if (totalCurvas == 3) // long between-line movement with 3 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints);                         // manda a traer los puntos de final de primera curva a inicio de segunda curva
-            interpolatedPoints2 = interpolatePoints(arrayCurvas[(totalPuntosEnCurva * 2) - 1][0], arrayCurvas[(totalPuntosEnCurva * 2) - 1][1], arrayCurvas[totalPuntosEnCurva * 2][0], arrayCurvas[totalPuntosEnCurva * 2][1], numPointsAux); // manda a traer los puntos de final de segunda curva a inicio de tercera curva
+            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints);                         // get the points from the end of the first curve to the start of the second curve
+            interpolatedPoints2 = interpolatePoints(arrayCurvas[(totalPuntosEnCurva * 2) - 1][0], arrayCurvas[(totalPuntosEnCurva * 2) - 1][1], arrayCurvas[totalPuntosEnCurva * 2][0], arrayCurvas[totalPuntosEnCurva * 2][1], numPointsAux); // get the points from the end of the second curve to the start of the third curve
 
-            numPointsFinal = numPoints + numPointsAux + numPointsCurva + (generalOffset / distanciaEntrePuntos); // el + 1 es por el valor que le agregamos al final de la trayectoria
+            numPointsFinal = numPoints + numPointsAux + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
 
             trayectoriaFinal = new float *[numPointsFinal];
             for (int i = 0; i < numPointsFinal; i++)
@@ -1979,11 +1979,10 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
             }
         }
     }
-    // -----------------------------------------------------------------Movimiento Entre Lineas --------------------------------------------------------------------
-    // ----------------------------------------------------------compensacion para centrar con offset----------------------------------------------------------------
-    int numPointsAdded = generalOffset / distanciaEntrePuntos;       // Número de puntos que se agregarán al final de la trayectoria
-    int lastPointIndex = numPointsFinal - numPointsAdded - 1;        // dice del último punto
-    int penultimatePointIndex = numPointsFinal - numPointsAdded - 2; // Índice del penúltimo puntoÍn
+    // -----------------------------------------------------------------Between-Line Movement --------------------------------------------------------------------
+    int numPointsAdded = generalOffset / distanciaEntrePuntos;       // Number of points to add at the end of the trajectory
+    int lastPointIndex = numPointsFinal - numPointsAdded - 1;        // Index of the last point
+    int penultimatePointIndex = numPointsFinal - numPointsAdded - 2; // Index of the second-to-last point
 
     float xLast = trayectoriaFinal[lastPointIndex][0];
     float yLast = trayectoriaFinal[lastPointIndex][1];
@@ -2006,7 +2005,7 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
 
     else
     {
-        interpolatedPoints3 = interpolatePoints(xLast, yLast, xNew, yNew, numPointsAux2); // Regresa una matriz con los puntos interpolados y tambien apunta numPoints con el numero de puntos interpolados.
+        interpolatedPoints3 = interpolatePoints(xLast, yLast, xNew, yNew, numPointsAux2); // Returns a matrix with interpolated points and also sets numPoints.
 
         for (int i = 0; i < numPointsAux2; i++)
         {
@@ -2015,7 +2014,7 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
         }
     }
 
-    // ----------------------------------------------------------compensacion para centrar con offset----------------------------------------------------------------
+    // ----------------------------------------------------------centering offset compensation----------------------------------------------------------------
     if (interpolatedPoints != nullptr)
     {
         for (int i = 0; i < numPoints; i++)
@@ -2023,7 +2022,7 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
             delete[] interpolatedPoints[i];
         }
         delete[] interpolatedPoints;
-        interpolatedPoints = nullptr; // Evitar puntero colgante
+        interpolatedPoints = nullptr; // Avoid dangling pointer
     }
     if (interpolatedPoints2 != nullptr)
     {
@@ -2044,15 +2043,15 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
         interpolatedPoints3 = nullptr;
     }
 
-    // ==============================================================genereadores de trayexctorias ==============================================================
+    // ==============================================================trajectory generators ==============================================================
 
     return trayectoriaFinal;
 }
 
 void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &totalCurvas, double arrayPuntosFinal[][2])
-// Regresa el total de puntos enviado.
+// Returns the total number of points sent.
 {
-    //=======Puntos intermedios para trayectoria del caballo=========
+    //=======Intermediate points for knight trajectory=========
     float diferenciaX;
     float diferenciaY;
     float puntoInterX;
@@ -2061,17 +2060,17 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
     int vectInterPointsX[5] = {-1, -1, -1, -1, -1};
     int vectInterPointsY[5] = {-1, -1, -1, -1, -1};
 
-    /*======================================CONDICION DE TRAYECTORIAS==========================================*/
+    /*======================================TRAJECTORY CONDITIONS==========================================*/
 
-    diferenciaX = abs(xIni - xFin); // distancia recorrida en X
-    diferenciaY = abs(yIni - yFin); // distancia recorrida en Y
+    diferenciaX = abs(xIni - xFin); // distance traveled in X
+    diferenciaY = abs(yIni - yFin); // distance traveled in Y
 
     vectInterPointsX[0] = xIni;
     vectInterPointsY[0] = yIni;
 
-    if (diferenciaX > diferenciaY) // Si la distancia en X es mayor que la distancia en Y
+    if (diferenciaX > diferenciaY) // If the distance in X is greater than the distance in Y
     {
-        if (yFin < yIni) // Electroiman viene de arriba hacia abajo
+        if (yFin < yIni) // Electromagnet moving from top to bottom
         {
             puntoInterX = xIni;
             puntoInterY = yIni - 25;
@@ -2079,7 +2078,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsX[1] = puntoInterX;
             vectInterPointsY[1] = puntoInterY;
         }
-        if (yFin > yIni) // Electroiman viene de abajo hacia arriba
+        if (yFin > yIni) // Electromagnet moving from bottom to top
         {
             puntoInterX = xIni;
             puntoInterY = yIni + 25;
@@ -2088,14 +2087,14 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsY[1] = puntoInterY;
         }
 
-        if (xFin < xIni) // Electroiman viene de derecha hacia izquierda
+        if (xFin < xIni) // Electromagnet moving from right to left
         {
             puntoInterX = xFin + 25;
 
             vectInterPointsX[2] = puntoInterX;
             vectInterPointsY[2] = puntoInterY;
         }
-        if (xFin > xIni) // Electroiman viene de izquierda hacia derecha
+        if (xFin > xIni) // Electromagnet moving from left to right
         {
             puntoInterX = xFin - 25;
 
@@ -2107,9 +2106,9 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
         vectInterPointsX[3] = puntoInterX;
         vectInterPointsY[3] = puntoInterY;
     }
-    else // Si la distancia en Y es mayor que la distancia en X
+    else // If the distance in Y is greater than the distance in X
     {
-        if (xFin < xIni) // Electroiman viene de derecha hacia izquierda
+        if (xFin < xIni) // Electromagnet moving from right to left
         {
             puntoInterX = xIni - 25;
             puntoInterY = yIni;
@@ -2117,7 +2116,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsX[1] = puntoInterX;
             vectInterPointsY[1] = puntoInterY;
         }
-        if (xFin > xIni) // Electroiman viene de izquierda hacia derecha
+        if (xFin > xIni) // Electromagnet moving from left to right
         {
             puntoInterX = xIni + 25;
             puntoInterY = yIni;
@@ -2125,14 +2124,14 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsX[1] = puntoInterX;
             vectInterPointsY[1] = puntoInterY;
         }
-        if (yFin < yIni) // Electroiman viene de arriba hacia abajo
+        if (yFin < yIni) // Electromagnet moving from top to bottom
         {
             puntoInterY = yFin + 25;
 
             vectInterPointsX[2] = puntoInterX;
             vectInterPointsY[2] = puntoInterY;
         }
-        if (yFin > yIni) // Electroiman viene de abajo hacia arriba
+        if (yFin > yIni) // Electromagnet moving from bottom to top
         {
             puntoInterY = yFin - 25;
 
@@ -2163,8 +2162,8 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
         }
         if (diferenciaX == 0)
         {
-            // El caso donde estan en la misma columna del tablero
-            if (xIni > 0) // Esta condicion es para esquivar los motores
+            // The case where they are in the same column of the board
+            if (xIni > 0) // This condition avoids the motors
             {
                 vectInterPointsX[1] = xIni - 25;
                 vectInterPointsY[1] = yIni;
@@ -2178,7 +2177,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
                 vectInterPointsX[4] = -1;
                 vectInterPointsY[4] = -1;
             }
-            else // El funcionamiento original solo incluia lo siguiente
+            else // The original implementation only included the following
             {
                 vectInterPointsX[1] = xIni + 25;
                 vectInterPointsY[1] = yIni;
@@ -2210,8 +2209,8 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
         }
         if (diferenciaY == 0)
         {
-            // El caso donde estan en la misma columna del tablero
-            if (yIni > 0) // Esta condicion es para esquivar los motores
+            // The case where they are in the same column of the board
+            if (yIni > 0) // This condition avoids the motors
             {
                 vectInterPointsX[1] = xIni;
                 vectInterPointsY[1] = yIni - 25;
@@ -2225,7 +2224,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
                 vectInterPointsX[4] = -1;
                 vectInterPointsY[4] = -1;
             }
-            else // El funcionamiento original solo incluia lo siguiente
+            else // The original implementation only included the following
             {
                 vectInterPointsX[1] = xIni;
                 vectInterPointsY[1] = yIni + 25;
@@ -2272,11 +2271,11 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsY[4] = -1;
         }
     }
-    /*======================================CONDICION DE TRAYECTORIAS==========================================*/
+    /*======================================TRAJECTORY CONDITIONS==========================================*/
     double arrayPuntosX[totalPuntosEnCurva] = {0};
     double arrayPuntosY[totalPuntosEnCurva] = {0};
 
-    if (vectInterPointsX[4] == -1 || vectInterPointsY[4] == -1) // Si no hay punto final de curva
+    if (vectInterPointsX[4] == -1 || vectInterPointsY[4] == -1) // If there is no curve endpoint
     {
         totalCurvas = 2;
         puntosDeCurvaBezier(vectInterPointsX[0], vectInterPointsY[0], vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
@@ -2320,8 +2319,8 @@ int movementType(int escaqueFilaInit, int escaqueColInit, int escaqueFilaEnd, in
 {
     if (escaqueFilaInit - escaqueFilaEnd == 0 || escaqueColInit - escaqueColEnd == 0 || abs(escaqueFilaInit - escaqueFilaEnd) == abs(escaqueColInit - escaqueColEnd)) // If the movement is in a straight line or diagonal
     {
-        // tipodeMov = 0 -> movimiento directo
-        // tipodeMov = 1 -> movimiento entre lineas
+        // tipodeMov = 0 -> direct movement
+        // tipodeMov = 1 -> between-line movement
         if (abs(escaqueFilaInit - escaqueFilaEnd) == abs(escaqueColInit - escaqueColEnd)) // If the movement is in a diagonal
         {
             int minX = min(escaqueFilaInit, escaqueFilaEnd);
@@ -2333,22 +2332,22 @@ int movementType(int escaqueFilaInit, int escaqueColInit, int escaqueFilaEnd, in
                 int y = -1;
                 if (escaqueFilaEnd > escaqueFilaInit)
                 {
-                    if (escaqueColEnd > escaqueColInit) // infderecha
+                    if (escaqueColEnd > escaqueColInit) // bottom-right
                     {
                         y = escaqueColInit + (x - escaqueFilaInit);
                     }
-                    else // supderecha
+                    else // top-right
                     {
                         y = escaqueColInit - (x - escaqueFilaInit);
                     }
                 }
                 else
                 {
-                    if (escaqueColEnd > escaqueColInit) // inf izquierda
+                    if (escaqueColEnd > escaqueColInit) // bottom-left
                     {
                         y = escaqueColInit + (escaqueFilaInit - x);
                     }
-                    else // sup izquierda
+                    else // top-left
                     {
                         y = escaqueColInit - (escaqueFilaInit - x);
                     }
@@ -2423,26 +2422,26 @@ int movementType(int escaqueFilaInit, int escaqueColInit, int escaqueFilaEnd, in
 
 float **interpolatePoints(float x1, float y1, float x2, float y2, int &numPoints)
 {
-    // Calcular la hipotenusa
+    // Calculate the hypotenuse
     float hypotenuse = std::sqrt(std::pow((x2 - x1), 2) + std::pow((y2 - y1), 2));
 
-    // Redondear el número de puntos al más cercano
+    // Round the number of points to the nearest integer
     numPoints = static_cast<int>(hypotenuse / distanciaEntrePuntos + 0.5f);
 
-    // Asegurarse de que numPoints sea al menos 2 para evitar divisiones por cero
+    // Ensure numPoints is at least 2 to avoid division by zero
     if (numPoints < 2)
     {
         numPoints = 2;
     }
 
-    // Crear una matriz dinámica en el montón
+    // Create a dynamic matrix on the heap
     float **interpolatedPoints = new float *[numPoints];
     for (int i = 0; i < numPoints; i++)
     {
         interpolatedPoints[i] = new float[2];
     }
 
-    // Realizar la interpolación
+    // Perform the interpolation
     for (int i = 0; i < numPoints; i++)
     {
         float t = static_cast<float>(i) / (numPoints - 1);
@@ -2462,8 +2461,8 @@ void puntosDeCurvaBezier(double xP1, double yP1, double xP2, double yP2, double 
     yP3 = (yP2 > yP3) ? yP2 - 25 : ((yP2 < yP3) ? yP2 + 25 : yP3);
     for (int i = 0; i < sizeArray; i++)
     {
-        double t = i / (double)(sizeArray - 1); // Distribuye los valores de t de manera uniforme entre 0 y 1
-        // Aplica la ecuación de Bézier para calcular los puntos en la curva
+        double t = i / (double)(sizeArray - 1); // Distribute t values uniformly between 0 and 1
+        // Apply the Bézier equation to calculate points on the curve
         arrayTestX[i] = (1 - t) * (1 - t) * xP1 + 2 * (1 - t) * t * xP2 + t * t * xP3;
         arrayTestY[i] = (1 - t) * (1 - t) * yP1 + 2 * (1 - t) * t * yP2 + t * t * yP3;
     }
@@ -2496,9 +2495,9 @@ void calcularOffsets(int electroActivo, float &electroOffsetX, float &electroOff
     }
 }
 
-//==========================================================GENERADOR DE TRAYECTORIA=====================================================
+//==========================================================TRAJECTORY GENERATOR======================================================
 
-//==========================================================DECODIFICA PARTIDAS=====================================================
+//==========================================================GAME DECODING=====================================================
 String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char y_finchar, char action, char piezacolor, char matrixToDecode[10][10], bool mode)
 {
     int x_ini;
@@ -2511,28 +2510,28 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
     bool lugarDisponible = false;
 
     String sendMove = "";
-    bool chess_color = (piezacolor == 'W') ? true : false; // false = negras, true = blancas
+    bool chess_color = (piezacolor == 'W') ? true : false; // false = black, true = white
 
     /* CONVERSOR DE CHAR A MATRIZPLUS */
     char posCoordBoardX[8] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
     char posCoordBoardY[8] = {'8', '7', '6', '5', '4', '3', '2', '1'};
 
-    // Busqueda de las coordenadasSc para modificar la matrizSc del tablero
-    for (int i = 0; i < 8; i++) // Barrido en X
+    // Search for coordinates to update the board matrix
+    for (int i = 0; i < 8; i++) // Scan in X
     {
-        if (x_inichar == posCoordBoardX[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (x_inichar == posCoordBoardX[i]) // If the letter matches the letter in the array, return the position index
         {
             x_ini = i + 1;
         }
-        if (x_finchar == posCoordBoardX[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (x_finchar == posCoordBoardX[i]) // If the letter matches the letter in the array, return the position index
         {
             x_fin = i + 1;
         }
-        if (y_inichar == posCoordBoardY[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (y_inichar == posCoordBoardY[i]) // If the letter matches the letter in the array, return the position index
         {
             y_ini = i + 1;
         }
-        if (y_finchar == posCoordBoardY[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (y_finchar == posCoordBoardY[i]) // If the letter matches the letter in the array, return the position index
         {
             y_fin = i + 1;
         }
@@ -2555,16 +2554,16 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
     }
     //----------------------------------------COMER----------------------------------------//
 
-    if (action == '1') // si la jugada es comer
+    if (action == '1') // if the move is a capture
     {
-        chess_color = !chess_color; // Se invierte el color porque se esta decodificando el movimiento del oponente en comer
-        // decodifica lugar final del cementerio.
-        if (chess_color == false) // si es negra
+        chess_color = !chess_color; // Invert the color because we are decoding the opponent's capture move
+        // Decode the final graveyard position.
+        if (chess_color == false) // if black
         {
-            if (matrixToDecode[x_fin][y_fin] == '.') // no hay pieza que comer en el destino, probablemente sea al passant.
+            if (matrixToDecode[x_fin][y_fin] == '.') // no piece to capture at the destination, probably en passant.
             {
 
-                if (matrixToDecode[x_fin][y_fin + 1] == 'P' || matrixToDecode[x_fin][y_fin + 1] == 'p') // confirmar que hay una pieza en la nueva pos.
+                if (matrixToDecode[x_fin][y_fin + 1] == 'P' || matrixToDecode[x_fin][y_fin + 1] == 'p') // confirm there is a piece at the new position.
                 {
                     Serial.println("Al passant");
                     flagAlPassant = true;
@@ -2577,9 +2576,9 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
             }
             if (matrixToDecode[x_fin][y_fin] == 'P' || matrixToDecode[x_fin][y_fin] == 'p')
             {
-                for (int i = 1; i <= 8; i++) // barre un lugar disponible en el cementerio, el 0 y 9 no estan porque son las esquinas. Se acomodan dependiento si es ascdendeeente o descendente
+                for (int i = 1; i <= 8; i++) // scan for an available graveyard spot; 0 and 9 are excluded as corners. Placed ascending or descending.
                 {
-                    if (matrixToDecode[i][9] == '.' && matrizBinSc[i][9] == 1) // verificamos el cementerio inferior, ahi van a eestar las piezas especiales negras.
+                    if (matrixToDecode[i][9] == '.' && matrizBinSc[i][9] == 1) // check the bottom graveyard; special black pieces go here.
                     {
                         x_finaux = i;
                         y_finaux = 9;
@@ -2589,9 +2588,9 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
             }
             else
             {
-                for (int i = 1; i <= 8; i++) // barre un lugar disponible en el cementerio, el 0 y 9 no estan porque son las esquinas. Se acomodan dependiento si es ascdendeeente o descendente
+                for (int i = 1; i <= 8; i++) // scan for an available graveyard spot; 0 and 9 are excluded as corners. Placed ascending or descending.
                 {
-                    if (matrixToDecode[9][i] == '.' && matrizBinSc[9][i] == 1) // verificamos el cementerio derecho, ahi van a eestar las piezas especialees negras.
+                    if (matrixToDecode[9][i] == '.' && matrizBinSc[9][i] == 1) // check the right graveyard; special black pieces go here.
                     {
                         x_finaux = 9;
                         y_finaux = i;
@@ -2600,12 +2599,12 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
                 }
             }
         }
-        else if (chess_color == true) // si es blanca
+        else if (chess_color == true) // if white
         {
-            if (matrixToDecode[x_fin][y_fin] == '.') // no hay pieza que comer en el destino, probablemente sea al passant.
+            if (matrixToDecode[x_fin][y_fin] == '.') // no piece to capture at the destination, probably en passant.
             {
 
-                if (matrixToDecode[x_fin][y_fin - 1] == 'P' || matrixToDecode[x_fin][y_fin - 1] == 'p') // confirmar que hay una pieza en la nueva pos.
+                if (matrixToDecode[x_fin][y_fin - 1] == 'P' || matrixToDecode[x_fin][y_fin - 1] == 'p') // confirm there is a piece at the new position.
                 {
                     Serial.println("Al passant");
                     flagAlPassant = true;
@@ -2617,11 +2616,11 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
                 }
             }
 
-            if (matrixToDecode[x_fin][y_fin] == 'P' || matrixToDecode[x_fin][y_fin] == 'p') // Si es un peon
+            if (matrixToDecode[x_fin][y_fin] == 'P' || matrixToDecode[x_fin][y_fin] == 'p') // If it is a pawn
             {
-                for (int i = 8; i >= 1; i--) // barre un lugar disponible en el cementerio, el 0 y 9 no estan porque son las esquinas. Se acomodan dependiento si es ascdendeeente o descendente
+                for (int i = 8; i >= 1; i--) // scan for an available graveyard spot; 0 and 9 are excluded as corners. Placed ascending or descending.
                 {
-                    if (matrixToDecode[i][0] == '.' && matrizBinSc[i][0] == 1) // verificamos el cementerio inferior, ahi van a eestar las piezas especiales negras.
+                    if (matrixToDecode[i][0] == '.' && matrizBinSc[i][0] == 1) // check the bottom graveyard; special black pieces go here.
                     {
                         x_finaux = i;
                         y_finaux = 0;
@@ -2631,9 +2630,9 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
             }
             else
             {
-                for (int i = 8; i >= 1; i--) // barre un lugar disponible en el cementerio, el 0 y 9 no estan porque son las esquinas. Se acomodan dependiento si es ascdendeeente o descendente
+                for (int i = 8; i >= 1; i--) // scan for an available graveyard spot; 0 and 9 are excluded as corners. Placed ascending or descending.
                 {
-                    if (matrixToDecode[0][i] == '.' && matrizBinSc[0][i] == 1) // verificamos el cementerio izquierdo, ahi van a eestar las piezas especialees blancas.
+                    if (matrixToDecode[0][i] == '.' && matrizBinSc[0][i] == 1) // check the left graveyard; special white pieces go here.
                     {
                         x_finaux = 0;
                         y_finaux = i;
@@ -2644,14 +2643,14 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
         }
         if (!lugarDisponible)
         {
-            // Mover pieza a cualquier espacio vacio '.'
+            // Move piece to any available empty space '.'
             for (int j = 0; j < 10; j++)
             {
                 for (int i = 0; i < 10; i++)
                 {
                     if (matrixToDecode[i][j] == '.' && matrizBinSc[i][j] == 1 && (i == 0 || i == 9 || j == 0 || j == 9) && !(i == 0 && j == 0) && !(i == 9 && j == 9) && !(i == 0 && j == 9) && !(i == 9 && j == 0))
                     {
-                        // Serial.println("Lugar random en cementerio encontrado. Moviendo pieza ahi.");
+                        // Serial.println("Random graveyard spot found. Moving piece there.");
                         x_finaux = i;
                         y_finaux = j;
                         lugarDisponible = true;
@@ -2662,7 +2661,7 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
 
         sendMove = String(x_fin) + String(y_fin) + String(x_finaux) + String(y_finaux);
 
-        if (flagAlPassant == true) // compensamos para que la posicion final sea la correcta y no donde se fue a buscar para comer.
+        if (flagAlPassant == true) // adjust final position to the correct one, not the capture search position
         {
             if (chess_color == false)
             {
@@ -2679,30 +2678,30 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
     //----------------------------------------COMER----------------------------------------//
 
     //----------------------------------------ENROQUES----------------------------------------//
-    else if (action == '2') // Enroques cortos
+    else if (action == '2') // Short castling
     {
-        if (chess_color == true) // Si es el turno de las blancas
+        if (chess_color == true) // If it is white's turn
         {
             sendMove = "58788868";
         }
-        else // Si es el turno de las negras
+        else // If it is black's turn
         {
             sendMove = "51718161";
         }
     }
-    else if (action == '3') // Enroque largo
+    else if (action == '3') // Long castling
     {
-        if (chess_color == true) // Si es el turno de las blancas
+        if (chess_color == true) // If it is white's turn
         {
             sendMove = "58381848";
         }
-        else // Si es el turno de las negras
+        else // If it is black's turn
         {
             sendMove = "51311141";
         }
     }
     //----------------------------------------ENROQUES----------------------------------------//
-    else // La jugada es onlymove.
+    else // The move is a simple move (onlymove).
     {
         sendMove = String(x_ini) + String(y_ini) + String(x_fin) + String(y_fin);
     }
@@ -2720,7 +2719,7 @@ String readFromFileSc(int gameToPlay)
     int gameLenght = 0;
     char movChessInd[7];
     const char *game = "";
-    char gameBuffer[2048]; // Ajusta el tamaño segú
+    char gameBuffer[2048]; // Adjust the size as needed
     // int gameToPlay = playlistIndices[cuentaPartidas];
 
     if (gameToPlay < 200)
@@ -2743,7 +2742,7 @@ String readFromFileSc(int gameToPlay)
         }
         preferences.end();
         strncpy(gameBuffer, gameString.c_str(), sizeof(gameBuffer) - 1);
-        gameBuffer[sizeof(gameBuffer) - 1] = '\0'; // Asegurarse de que esté terminado en nulo
+        gameBuffer[sizeof(gameBuffer) - 1] = '\0'; // Ensure null-terminated
         game = gameBuffer;
         Serial.print("Game to play: ");
         Serial.println(game);
@@ -2765,28 +2764,28 @@ String readFromFileSc(int gameToPlay)
     // Serial.print("Initial Matrix: ");
     // printMatrizGenerica(matrixToSimulateGame, 10, 10);
     indexA = 0;
-    while (indexA < gameLenght) // Itera sobre todo el string de la partida
+    while (indexA < gameLenght) // Iterate over the entire game string
     {
         // Serial.print("ASCII: ");
         // Serial.print(game[indexA]);
-        //// imprimir el hedacimal para ver que esta leyendo]
+        //// print the hexadecimal value to see what is being read
         // Serial.print("      HEX: ");
         // Serial.println(game[indexA], DEC);
 
-        if (game[indexA] == ' ') // Si encuentra un espacio, significa que empieza un movimiento
+        if (game[indexA] == ' ') // If a space is found, a new move is starting
         {
-            for (int i = 0; i < 7; i++) // inicializa todo el movimiento en V
+            for (int i = 0; i < 7; i++) // initialize the entire move to V
             {
                 movChessInd[i] = 'v';
             }
 
-            indexA++;                                                                 // se mueve al siguiente caracter
-            int indexAInit = indexA;                                                  // Guarda la posición inicial del movimiento
-            while (game[indexA] != ' ' && game[indexA] != '.' && indexA < gameLenght) // mientras no se encuentre un espacio o un punto o sea lo ultimo de la cadena.
+            indexA++;                                                                 // move to the next character
+            int indexAInit = indexA;                                                  // Save the starting position of the move
+            while (game[indexA] != ' ' && game[indexA] != '.' && indexA < gameLenght) // while a space, period, or end of string is not found
             {
                 // Serial.print("ASCII: ");
                 // Serial.print(game[indexA]);
-                // // imprimir el hedacimal para ver que esta leyendo]
+                // // print the hexadecimal value to see what is being read
                 // Serial.print("      HEX: ");
                 // Serial.println(game[indexA], DEC);
 
@@ -2797,12 +2796,12 @@ String readFromFileSc(int gameToPlay)
             if (game[indexA] == ' ')
             {
                 String auxDecode = decodeChessMove(movChessInd, index_mov);
-                // Serial.print("Movimiento: ");
+                // Serial.print("Move: ");
                 // Serial.println(auxDecode);
                 String localMove = decodificaMovimiento(auxDecode[2], auxDecode[3], auxDecode[4], auxDecode[5], auxDecode[1], auxDecode[0], matrixToSimulateGame, false);
-                // Serial.print("Movimiento decodificado: ");
+                // Serial.print("Decoded move: ");
                 //  Serial.println(localMove);
-                // simulando movimiento
+                // simulating the move
                 matrixToSimulateGame[localMove[2] - '0'][localMove[3] - '0'] = matrixToSimulateGame[localMove[0] - '0'][localMove[1] - '0'];
                 matrixToSimulateGame[localMove[0] - '0'][localMove[1] - '0'] = '.';
                 // Serial.println("Matrix after move: ");
@@ -2815,7 +2814,7 @@ String readFromFileSc(int gameToPlay)
                     //  printMatrizGenerica(matrixToSimulateGame, 10, 10);
                 }
 
-                // simulando movimiento
+                // simulating the move
                 fullMoves = fullMoves + localMove;
                 index_mov++;
             }
@@ -2893,12 +2892,12 @@ String decodeChessMove(char movChess[7], int cuentaMovimientos)
             {
                 if (movChess[i] == mask[j])
                 {
-                    break; // Si hay coincidencia, salimos del bucle interno
+                    break; // If there is a match, exit the inner loop
                 }
                 if (j == 11)
                 {
-                    // Si llegamos al final del bucle interno y no hubo coincidencia,
-                    // almacenamos la posición y aumentamos k
+                    // If we reached the end of the inner loop without a match,
+                    // store the position and increment k
                     posIndex[k] = i;
                     k++;
                 }
@@ -2916,12 +2915,12 @@ String decodeChessMove(char movChess[7], int cuentaMovimientos)
         return strChessMove;
     }
 }
-//============================================================DECODIFICA PARTIDAS=====================================================
+//============================================================GAME DECODING=====================================================
 
-//==============================================================SENSADO=====================================================
+//==============================================================SENSING======================================================
 void sensorsDir()
 {
-    dirMux[0][0] = 464; // sensor mas lejano a middle
+    dirMux[0][0] = 464; // sensor farthest from middle
     dirMux[1][0] = 466;
     dirMux[2][0] = 467;
     dirMux[3][0] = 465;
@@ -2930,9 +2929,9 @@ void sensorsDir()
     dirMux[6][0] = 460;
     dirMux[7][0] = 463;
     dirMux[8][0] = 440;
-    dirMux[9][0] = 420; // sensor mas cercano a middle
+    dirMux[9][0] = 420; // sensor closest to middle
                         // barra2
-    dirMux[0][1] = 414; // sensor mas lejano a middle
+    dirMux[0][1] = 414; // sensor farthest from middle
     dirMux[1][1] = 416;
     dirMux[2][1] = 417;
     dirMux[3][1] = 415;
@@ -2943,7 +2942,7 @@ void sensorsDir()
     dirMux[8][1] = 470;
     dirMux[9][1] = 450;
 
-    dirMux[0][2] = 324; // sensor mas lejano a middle
+    dirMux[0][2] = 324; // sensor farthest from middle
     dirMux[1][2] = 326;
     dirMux[2][2] = 327;
     dirMux[3][2] = 325;
@@ -2954,7 +2953,7 @@ void sensorsDir()
     dirMux[8][2] = 430;
     dirMux[9][2] = 400;
 
-    dirMux[0][3] = 344; // sensor mas lejano a middle
+    dirMux[0][3] = 344; // sensor farthest from middle
     dirMux[1][3] = 346;
     dirMux[2][3] = 347;
     dirMux[3][3] = 345;
@@ -2965,7 +2964,7 @@ void sensorsDir()
     dirMux[8][3] = 360;
     dirMux[9][3] = 310;
 
-    dirMux[0][4] = 334; // sensor mas lejano a middle
+    dirMux[0][4] = 334; // sensor farthest from middle
     dirMux[1][4] = 336;
     dirMux[2][4] = 337;
     dirMux[3][4] = 335;
@@ -2976,7 +2975,7 @@ void sensorsDir()
     dirMux[8][4] = 300;
     dirMux[9][4] = 350;
 
-    dirMux[0][5] = 214; // sensor mas lejano a middle
+    dirMux[0][5] = 214; // sensor farthest from middle
     dirMux[1][5] = 216;
     dirMux[2][5] = 217;
     dirMux[3][5] = 215;
@@ -2987,7 +2986,7 @@ void sensorsDir()
     dirMux[8][5] = 230;
     dirMux[9][5] = 220;
 
-    dirMux[0][6] = 204; // sensor mas lejano a middle
+    dirMux[0][6] = 204; // sensor farthest from middle
     dirMux[1][6] = 206;
     dirMux[2][6] = 207;
     dirMux[3][6] = 205;
@@ -2998,7 +2997,7 @@ void sensorsDir()
     dirMux[8][6] = 240;
     dirMux[9][6] = 250;
 
-    dirMux[0][7] = 154; // sensor mas lejano a middle
+    dirMux[0][7] = 154; // sensor farthest from middle
     dirMux[1][7] = 156;
     dirMux[2][7] = 157;
     dirMux[3][7] = 155;
@@ -3009,7 +3008,7 @@ void sensorsDir()
     dirMux[8][7] = 120;
     dirMux[9][7] = 260;
 
-    dirMux[0][8] = 114; // sensor mas lejano a middle
+    dirMux[0][8] = 114; // sensor farthest from middle
     dirMux[1][8] = 116;
     dirMux[2][8] = 117;
     dirMux[3][8] = 115;
@@ -3020,7 +3019,7 @@ void sensorsDir()
     dirMux[8][8] = 130;
     dirMux[9][8] = 170;
 
-    dirMux[0][9] = 164; // sensor mas lejano a middleiiiiiiiiiiiiiiiiiiiiiii
+    dirMux[0][9] = 164; // sensor farthest from middleiiiiiiiiiiiiiiiiiiiiiii
     dirMux[1][9] = 166;
     dirMux[2][9] = 167;
     dirMux[3][9] = 165;
@@ -3039,16 +3038,16 @@ void updateSensors()
     {
         for (int j = 0; j < 10; j++)
         {
-            int muxOut = dirMux[i][j] / 100;       // Obtiene las centenas
-            int mux16 = (dirMux[i][j] % 100) / 10; // Obtiene las decenas
-            int mux8 = dirMux[i][j] % 10;          // Obtiene las unidades
+            int muxOut = dirMux[i][j] / 100;       // Get the hundreds digit
+            int mux16 = (dirMux[i][j] % 100) / 10; // Get the tens digit
+            int mux8 = dirMux[i][j] % 10;          // Get the units digit
             digitalWrite(mux16_0, mux16 & 0b00000001);
             digitalWrite(mux16_1, (mux16 >> 1) & 0b00000001);
             digitalWrite(mux16_2, (mux16 >> 2) & 0b00000001);
             digitalWrite(mux8_0, mux8 & 0b00000001);
             digitalWrite(mux8_1, (mux8 >> 1) & 0b00000001);
             digitalWrite(mux8_2, (mux8 >> 2) & 0b00000001);
-            delayMicroseconds(1); // Reducción del retardo
+            delayMicroseconds(1); // Reduced delay
 
             temp[i][j] = digitalRead(muxesOut[muxOut]);
         }
@@ -3104,7 +3103,7 @@ void updateSensors()
     }
 
     sensorUpdate[0][0] = true;
-    // sensorUpdate[0][9] = false; ES EL DE CALIBRACION
+    // sensorUpdate[0][9] = false; THIS IS THE CALIBRATION ONE
     sensorUpdate[9][0] = true;
     sensorUpdate[9][9] = true;
 }
@@ -3157,34 +3156,34 @@ void detectChessBoard(bool sensVal[10][10])
 
 void desfaseSensado()
 {
-    // Calcula la posición actual
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // posición en la que se encuentra sin compensación de offset
+    // Calculate current position
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / -(driverMicroSteps * 5)) + currentYposition;
 
-    // Calcula el vector desde la posición actual hacia el origen (0, 0)
-    float vectorX = -currentXposition; // negativo para ir en la dirección opuesta al origen
-    float vectorY = -currentYposition; // negativo para ir en la dirección opuesta al origen
+    // Calculate the vector from the current position toward the origin (0, 0)
+    float vectorX = -currentXposition; // negative to go in the opposite direction toward the origin
+    float vectorY = -currentYposition; // negative to go in the opposite direction toward the origin
 
-    // Calcula la magnitud del vector actual desde la posición actual hasta el origen
+    // Calculate the magnitude of the current vector from the current position to the origin
     float magnitude = sqrt(vectorX * vectorX + vectorY * vectorY);
 
-    // Calcula las coordenadas del punto a 50 mm en la dirección opuesta desde la posición actual
+    // Calculate the coordinates of the point 50 mm in the opposite direction from the current position
     float xprima = currentXposition + (10 * vectorX / magnitude);
     float yprima = currentYposition + (10 * vectorY / magnitude);
 
-    // Mueve el sistema a las coordenadas xprima, yprima
+    // Move the system to coordinates xprima, yprima
     rawMovement(xprima, yprima, -4, currentXposition, currentYposition);
 }
-//===============================================================SENSADO=====================================================
+//===============================================================SENSING=======================================================
 
-//==========================================================OPERACION MATRICIAL=====================================================
+//==========================================================MATRIX OPERATIONS=====================================================
 void printMatrizGenerica(char matriz[filas][columnas], int filas, int columnas)
 {
 
     char vectNumeros[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     char matrizAux[filas + 1][columnas + 1];
 
-    // Llenar matrizAux con la matriz original desplazada
+    // Fill matrizAux with the original matrix shifted by one
     for (int j = 1; j < filas + 1; j++)
     {
         for (int i = 1; i < columnas + 1; i++)
@@ -3193,19 +3192,19 @@ void printMatrizGenerica(char matriz[filas][columnas], int filas, int columnas)
         }
     }
 
-    // Agregar números a la fila superior
+    // Add numbers to the top row
     for (int i = 1; i < columnas + 1; i++)
     {
         matrizAux[i][0] = vectNumeros[i - 1];
     }
 
-    // Agregar números a la columna izquierda
+    // Add numbers to the left column
     for (int j = 1; j < filas + 1; j++)
     {
         matrizAux[0][j] = vectNumeros[j - 1];
     }
 
-    // Espacio en la esquina superior izquierda
+    // Space at the top-left corner
     matrizAux[0][0] = ' ';
 
     // Imprimir matrizAux
@@ -3241,9 +3240,9 @@ void initMatrizPlus(char matrixToInit[10][10])
         matrixToInit[i][7] = 'P';
     }
 }
-//==========================================================OPERACION MATRICIAL=====================================================
+//==========================================================MATRIX OPERATIONS=====================================================
 
-//==========================================================CALIBRACION MECANICA=====================================================
+//==========================================================MECHANICAL CALIBRATION=====================================================
 void configAndCurrentPosManager(int setSpeedbyUser, float &driverMicroSteps)
 {
     //===============================================DRIVERS CONFIGURATION===============================================
@@ -3425,11 +3424,11 @@ void rawMovement(float filaEnd, float colEnd, int magnet, float &lastRawposition
     // --------------------------------------------Speed------------------------------------------
 
 #ifdef MODELFINAL
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / -(driverMicroSteps * 5)) + currentYposition;
 #endif
 #ifdef MODELEFRA
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * (driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * (driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / (driverMicroSteps * 5)) + currentYposition;
 #endif
 
@@ -3438,15 +3437,15 @@ void rawMovement(float filaEnd, float colEnd, int magnet, float &lastRawposition
 
     double distance = sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    timeToPosition = distance / setSpeedTesting; // La parte entera de la división es el tiempo que se tarda en llegar a la posición
+    timeToPosition = distance / setSpeedTesting; // The integer part of the division is the time to reach the position
 
-    speedperStep[0] = ((numberofSteps[0] - stepper1.currentPosition()) / timeToPosition); // asigna la velocidad a matriz de velociades
-    speedperStep[1] = ((numberofSteps[1] - stepper2.currentPosition()) / timeToPosition); // asigna la velocidad a matriz de velociades
+    speedperStep[0] = ((numberofSteps[0] - stepper1.currentPosition()) / timeToPosition); // assign speed to the speed matrix
+    speedperStep[1] = ((numberofSteps[1] - stepper2.currentPosition()) / timeToPosition); // assign speed to the speed matrix
     // --------------------------------------------Speed------------------------------------------
 
     //  --------------------------------------------------Pure Motor Movement-------------------------------------------------------------------
-    stepper1.setMaxSpeed(10000000); // Que no nos arruine el calculo de velocidades
-    stepper2.setMaxSpeed(10000000); // Que no nos arruine el calculo de velocidades
+    stepper1.setMaxSpeed(10000000); // Prevent interference with speed calculations
+    stepper2.setMaxSpeed(10000000); // Prevent interference with speed calculations
     float stepsM1 = numberofSteps[0] - stepper1.currentPosition();
     float stepsM2 = numberofSteps[1] - stepper2.currentPosition();
 
@@ -3461,9 +3460,9 @@ void rawMovement(float filaEnd, float colEnd, int magnet, float &lastRawposition
     float dirDeGiro1 = stepsM1 > 0 ? 1 : -1;
     float dirDeGiro2 = stepsM2 > 0 ? 1 : -1;
 
-    /*     int muxOut = dirMux[int(filaEnd)][int(colEnd)] / 100;       // Obtiene las centenas
-        int mux16 = (dirMux[int(filaEnd)][int(colEnd)] % 100) / 10; // Obtiene las decenas
-        int mux8 = dirMux[int(filaEnd)][int(colEnd)] % 10;          // Obtiene las unidades
+    /*     int muxOut = dirMux[int(filaEnd)][int(colEnd)] / 100;       // Get the hundreds digit
+        int mux16 = (dirMux[int(filaEnd)][int(colEnd)] % 100) / 10; // Get the tens digit
+        int mux8 = dirMux[int(filaEnd)][int(colEnd)] % 10;          // Get the units digit
         digitalWrite(mux16_0, mux16 & 0b00000001);
         digitalWrite(mux16_1, (mux16 >> 1) & 0b00000001);
         digitalWrite(mux16_2, (mux16 >> 2) & 0b00000001);
@@ -3543,7 +3542,7 @@ void rawMovement(float filaEnd, float colEnd, int magnet, float &lastRawposition
     }
 
     //  --------------------------------------------------Pure Motor Movement-------------------------------------------------------------------
-    lastRawpositionY = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    lastRawpositionY = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // current position without offset compensation
     lastRawpositionX = (stepper1.currentPosition() / -(driverMicroSteps * 5)) + lastRawpositionY;
 
     /*     Serial.print("Last Position X: ");
@@ -3593,7 +3592,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
     // -------------------------------------Inverse Kinematics------------------------------------------
 
     //  --------------------------------------------Speed------------------------------------------
-    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // posicion en la que se encuentra sin compensacion de offset
+    float currentYposition = ((stepper1.currentPosition() + stepper2.currentPosition()) / (-2 * -(driverMicroSteps * 5))); // current position without offset compensation
     float currentXposition = (stepper1.currentPosition() / -(driverMicroSteps * 5)) + currentYposition;
 
     double deltaX = coordXEnd - currentXposition;
@@ -3601,10 +3600,10 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
 
     double distance = sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    double timeToPosition = distance / setSpeedTesting; // La parte entera de la división es el tiempo que se tarda en llegar a la posición
+    double timeToPosition = distance / setSpeedTesting; // The integer part of the division is the time to reach the position
 
-    speedperStep[0] = ((numberofSteps[0] - stepper1.currentPosition()) / timeToPosition); // asigna la velocidad a matriz de velociades
-    speedperStep[1] = ((numberofSteps[1] - stepper2.currentPosition()) / timeToPosition); // asigna la velocidad a matriz de velociades
+    speedperStep[0] = ((numberofSteps[0] - stepper1.currentPosition()) / timeToPosition); // assign speed to the speed matrix
+    speedperStep[1] = ((numberofSteps[1] - stepper2.currentPosition()) / timeToPosition); // assign speed to the speed matrix
     //  --------------------------------------------------Pure Motor Movement-------------------------------------------------------------------
     int stepsarstart = 0;
     int stepsarstart2 = 0;
@@ -3620,16 +3619,16 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
     int stall_data_prev_m2 = driver2.SG_RESULT();
     int stall_data_prev_m1 = driver.SG_RESULT();
 
-    const int maxValueCount = 100;         // Máximo número de valores diferentes que esperamos
-    int values1[maxValueCount] = {0};      // Array para almacenar los valores de changeInCalib1
-    int values2[maxValueCount] = {0};      // Array para almacenar los valores de changeInCalib2
-    int frequencies1[maxValueCount] = {0}; // Array para almacenar las frecuencias de cada valor de changeInCalib1
-    int frequencies2[maxValueCount] = {0}; // Array para almacenar las frecuencias de cada valor de changeInCalib2
-    int valueCount1 = 0;                   // Cantidad de valores distintos encontrados para changeInCalib1
-    int valueCount2 = 0;                   // Cantidad de valores distintos encontrados para changeInCalib2
+    const int maxValueCount = 100;         // Maximum number of different values expected
+    int values1[maxValueCount] = {0};      // Array to store changeInCalib1 values
+    int values2[maxValueCount] = {0};      // Array to store changeInCalib2 values
+    int frequencies1[maxValueCount] = {0}; // Array to store the frequency of each changeInCalib1 value
+    int frequencies2[maxValueCount] = {0}; // Array to store the frequency of each changeInCalib2 value
+    int valueCount1 = 0;                   // Number of distinct values found for changeInCalib1
+    int valueCount2 = 0;                   // Number of distinct values found for changeInCalib2
 
-    int mostFrequentValue1 = 0; // El valor más frecuente para changeInCalib1
-    int mostFrequentValue2 = 0; // El valor más frecuente para changeInCalib2
+    int mostFrequentValue1 = 0; // The most frequent value for changeInCalib1
+    int mostFrequentValue2 = 0; // The most frequent value for changeInCalib2
     unsigned long timeBeforeMotors = millis();
     bool flagOnce = false;
     do
@@ -3653,7 +3652,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
             flagOnce = true;
         }
 
-        // Buscar si el valor ya existe en el array para changeInCalib1
+        // Search for the value in the array for changeInCalib1
         bool found1 = false;
         for (int i = 0; i < valueCount1; i++)
         {
@@ -3665,7 +3664,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
             }
         }
 
-        // Si el valor no está en el array, agregarlo para changeInCalib1
+        // If the value is not in the array, add it for changeInCalib1
         if (!found1 && valueCount1 < maxValueCount)
         {
             values1[valueCount1] = changeInCalib1;
@@ -3673,7 +3672,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
             valueCount1++;
         }
 
-        // Buscar si el valor ya existe en el array para changeInCalib2
+        // Search for the value in the array for changeInCalib2
         bool found2 = false;
         for (int i = 0; i < valueCount2; i++)
         {
@@ -3685,7 +3684,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
             }
         }
 
-        // Si el valor no está en el array, agregarlo para changeInCalib2
+        // If the value is not in the array, add it for changeInCalib2
         if (!found2 && valueCount2 < maxValueCount)
         {
             values2[valueCount2] = changeInCalib2;
@@ -3726,7 +3725,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
         stall_data_prev_m1 = current_sg_result1;
     } while (stepper2.distanceToGo() != 0 || stepper1.distanceToGo() != 0);
 
-    // Deshabilitar y detener el timer
+    // Disable and stop the timer
     driver2.toff(0);
     driver.toff(0);
 
@@ -3735,14 +3734,14 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
         timerAlarmDisable(timer1H);
         timerDetachInterrupt(timer1H);
         timerEnd(timer1H);
-        timer1H = NULL; // Asegurarse de que el puntero es NULL después de liberar el timer
+        timer1H = NULL; // Ensure the pointer is NULL after freeing the timer
         // Serial.println("==============================================Timer disabled");
     }
 
     for (int i = 0; i < valueCount1; i++)
     {
         // Serial.printf("Value1: %d, Frequency1: %d\n", values1[i], frequencies1[i]);
-        // verificar el valor mas alto, aparte de ser un valor grande debe tener una frecuencia mayor a 5
+        // verify the highest value; it must be large and have a frequency greater than 5
         if (frequencies1[i] > 5 && values1[i] > mostFrequentValue1)
         {
             mostFrequentValue1 = values1[i];
@@ -3752,7 +3751,7 @@ void rawMovementStallGuard(float coordXEnd, float coordYEnd, float setSpeedTesti
     for (int i = 0; i < valueCount2; i++)
     {
         // Serial.printf("Value2: %d, Frequency2: %d\n", values2[i], frequencies2[i]);
-        //  verificar el valor mas alto, aparte de ser un valor grande debe tener una frecuencia mayor a 5
+        //  verify the highest value; it must be large and have a frequency greater than 5
         if (frequencies2[i] > 5 && values2[i] > mostFrequentValue2)
         {
             mostFrequentValue2 = values2[i];
@@ -3795,11 +3794,11 @@ void configDrivers()
 
     driver2.begin();
 
-    driver2.tbl(tbllocal);          // Para la mayoria de las apliaciones 1 o 2 esta bien, si es de alta carga usar 2 o 3
-    driver2.I_scale_analog(false);  // Para la mayoria de las aplicaciones es mejor desactivarla
-    driver2.internal_Rsense(false); // Para la mayoria de las aplicaciones es mejor desactivarla
-    driver2.hstrt(hstrtlocal);      // pagina 50 de datasheet, valores bajos quitar precision y altos hacen mas ruido.
-    driver2.hend(hstrtemdlocal);    // pagina 50 de datasheet, valores bajos quitar precision y altos hacen mas ruido.
+    driver2.tbl(tbllocal);          // For most applications 1 or 2 is fine; for high-load applications use 2 or 3
+    driver2.I_scale_analog(false);  // For most applications it is better to disable this
+    driver2.internal_Rsense(false); // For most applications it is better to disable this
+    driver2.hstrt(hstrtlocal);      // datasheet page 50; low values reduce precision and high values produce more noise.
+    driver2.hend(hstrtemdlocal);    // datasheet page 50; low values reduce precision and high values produce more noise.
 
     driver2.irun(31);
     driver2.ihold(16);
@@ -3811,8 +3810,8 @@ void configDrivers()
     driver2.pwm_autoscale(true);
 
     digitalWrite(ENABLE_PIN, HIGH);
-    driver.rms_current(HOLD_CURRENT);  // Protecction de temperatura y consumo de corriente
-    driver2.rms_current(HOLD_CURRENT); // Protecction de temperatura y consumo de corriente
+    driver.rms_current(HOLD_CURRENT);  // Temperature and current consumption protection
+    driver2.rms_current(HOLD_CURRENT); // Temperature and current consumption protection
     delay(150);
 }
 
@@ -3859,22 +3858,22 @@ void mechanicalCalibration(int calibrationMode)
         drv1 = false;
         driver.rms_current(CALIB_CURRENT);
         driver.microsteps(driverMicroSteps);
-        driver.en_spreadCycle(false); // Habilita StealthChop
+        driver.en_spreadCycle(false); // Enable StealthChop
 
         driver2.rms_current(0);
         driver2.microsteps(driverMicroSteps);
-        driver2.en_spreadCycle(false); // Habilita StealthChop
+        driver2.en_spreadCycle(false); // Enable StealthChop
     }
     else if (activeMotors == 2)
     {
         drv2 = false;
         driver.rms_current(0);
         driver.microsteps(driverMicroSteps);
-        driver.en_spreadCycle(false); // Habilita StealthChop
+        driver.en_spreadCycle(false); // Enable StealthChop
 
         driver2.rms_current(CALIB_CURRENT);
         driver2.microsteps(driverMicroSteps);
-        driver2.en_spreadCycle(false); // Habilita StealthChop
+        driver2.en_spreadCycle(false); // Enable StealthChop
     }
     else
     {
@@ -3882,17 +3881,17 @@ void mechanicalCalibration(int calibrationMode)
         drv2 = false;
         driver.rms_current(CALIB_CURRENT - 300);
         driver.microsteps(driverMicroSteps);
-        driver.en_spreadCycle(false); // Habilita StealthChop
+        driver.en_spreadCycle(false); // Enable StealthChop
 
         driver2.rms_current(CALIB_CURRENT - 300);
         driver2.microsteps(driverMicroSteps);
-        driver2.en_spreadCycle(false); // Habilita StealthChop
+        driver2.en_spreadCycle(false); // Enable StealthChop
     }
 
     stepper1.setCurrentPosition(0);
     stepper2.setCurrentPosition(0);
 
-    int toleranciaM = driverMicroSteps * 5 * 5; // equivale a 800 pasos que en mm son 5mm
+    int toleranciaM = driverMicroSteps * 5 * 5; // equivalent to 800 steps, which is 5mm
 
     int stallCounter = 0;
     int maxValueStall = 0;
@@ -3919,13 +3918,13 @@ void mechanicalCalibration(int calibrationMode)
                 readRawSensors(matrizBinSc);
                 Serial.println("Sensor Status After Stall: " + String(matrizBinSc[0][9]));
 
-                if (!matrizBinSc[0][9]) // Se podia usar el sensor 0,9 y detecto, estmamos en la posicion correcta
+                if (!matrizBinSc[0][9]) // The sensor was used and detected; we are at the correct position
                 {
                     deactivateAllMagnets();
                     Serial.println("TERMINA HOMING POR SENSOR 09");
                     break;
                 }
-                else // O no funciona el sensor o se intentaron demasiadas veces y no se llego porque la corriente era demasiado baja.
+                else // Either the sensor is not working or too many attempts were made without reaching the position due to insufficient current.
                 {
                     if (sensor44FirstStatus == 1 && matrizBinSc[4][4] == 0)
                     {
@@ -4062,13 +4061,13 @@ void mechanicalCalibration(int calibrationMode)
                     }
                 }
 
-                if (!sensorsX9) // Se podia usar el sensor 0,9 y detecto, estmamos en la posicion correcta
+                if (!sensorsX9) // The sensor was used and detected; we are at the correct position
                 {
                     deactivateAllMagnets();
                     Serial.println("TERMINA HOMING POR SENSOR X9");
                     break;
                 }
-                else // O no funciona el sensor o se intentaron demasiadas veces y no se llego porque la corriente era demasiado baja.
+                else // Either the sensor is not working or too many attempts were made without reaching the position due to insufficient current.
                 {
                     Serial.println("NO SE DETECTO EL SENSOR X9, REINTENTANDO");
                     enhancedCalib = 0;
@@ -4091,7 +4090,7 @@ void mechanicalCalibration(int calibrationMode)
 
             if (stallCounter < 4)
             {
-                // Serial.printf("PREPARANDO OTRO ROUND DE HOMING \n\n\n\n");
+                // Serial.printf("PREPARING ANOTHER HOMING ROUND \n\n\n\n");
                 stallVolatile = stalltoUse;
                 stallVolatileD2 = stalltoUseD2;
                 rawMovementStallGuard(-10, 0, slowSpeed, activeMotors, stallVolatile, stallVolatileD2);
@@ -4118,10 +4117,10 @@ void mechanicalCalibration(int calibrationMode)
         driverMicroSteps = 32;
         driver.rms_current(CALIB_CURRENT - 300);
         driver.microsteps(driverMicroSteps);
-        driver.en_spreadCycle(false); // Habilita StealthChop
+        driver.en_spreadCycle(false); // Enable StealthChop
         driver2.rms_current(CALIB_CURRENT - 300);
         driver2.microsteps(driverMicroSteps);
-        driver2.en_spreadCycle(false); // Habilita StealthChop
+        driver2.en_spreadCycle(false); // Enable StealthChop
         stepper1.setCurrentPosition(0);
         stepper2.setCurrentPosition(0);
 
@@ -4147,13 +4146,13 @@ void mechanicalCalibration(int calibrationMode)
                 readRawSensors(matrizBinSc);
                 Serial.println("Sensor Status After Stall: " + String(matrizBinSc[4][9]));
 
-                if (!matrizBinSc[4][9]) // Se podia usar el sensor 0,9 y detecto, estmamos en la posicion correcta
+                if (!matrizBinSc[4][9]) // The sensor was used and detected; we are at the correct position
                 {
                     deactivateAllMagnets();
                     Serial.println("TERMINA HOMING POR SENSOR 49");
                     break;
                 }
-                else // O no funciona el sensor o se intentaron demasiadas veces y no se llego porque la corriente era demasiado baja.
+                else // Either the sensor is not working or too many attempts were made without reaching the position due to insufficient current.
                 {
                     Serial.println("NO SE DETECTO EL SENSOR 49, REINTENTANDO");
                     deactivateAllMagnets();
@@ -4183,7 +4182,7 @@ void mechanicalCalibration(int calibrationMode)
 
             if (stallCounter < 4)
             {
-                // Serial.printf("PREPARANDO OTRO ROUND DE HOMING \n\n\n\n");
+                // Serial.printf("PREPARING ANOTHER HOMING ROUND \n\n\n\n");
                 stallVolatile = stalltoUse;
                 stallVolatileD2 = stalltoUseD2;
                 rawMovementStallGuard(0, 10, slowSpeed, activeMotors, stallVolatile, stallVolatileD2);
@@ -4237,11 +4236,11 @@ void mechanicalCalibration(int calibrationMode)
      }  */
 }
 
-//==========================================================CALIBRACION MECANICA=====================================================
+//==========================================================MECHANICAL CALIBRATION=====================================================
 void sensorsCalibration(int filaEnd, int colEnd, int modo, float &totalX, float &totalY)
 {
-    // modo 0 -> calibracion de sensores
-    // modo 1 -> calibracion de sensores con correccion
+    // mode 0 -> sensor calibration
+    // mode 1 -> sensor calibration with correction
     float posX = 0;
     float posY = 0;
     float anguloPizza = 60;
@@ -4404,7 +4403,7 @@ void soundHandler(int soundMode)
     case 9: // Special sound for battery
         cute.play(PIRATES);
         break;
-    case 10: // jaque
+    case 10: // check
         if (_sound == 2)
         {
             delay(1000);
@@ -4419,7 +4418,7 @@ void soundHandler(int soundMode)
             cute._tone(NOTE_A0, 1000, 30);
         }
         break;
-    case 11: // jaque mate
+    case 11: // checkmate
         if (_sound == 2)
         {
             cute._tone(NOTE_Gb3, 2000, 30);
@@ -4438,38 +4437,38 @@ void soundHandler(int soundMode)
 
 int buscarPosicionCercanaVacia(int filaActualAux, int colActualAux, char matrixToSearch[10][10])
 {
-    int filaActual = filaActualAux; // Fila actual alrededor de la cual estás buscando
-    int colActual = colActualAux;   // Columna actual alrededor de la cual estás buscando
+    int filaActual = filaActualAux; // Current row being searched around
+    int colActual = colActualAux;   // Current column being searched around
 
-    int rango = 1; // Inicializa el rango de búsqueda
+    int rango = 1; // Initialize the search range
 
     while (true)
     {
-        // Explora las posiciones dentro del rango actual
-        for (int j = -rango; j <= rango; ++j) // explora fila
+        // Explore positions within the current range
+        for (int j = -rango; j <= rango; ++j) // explore row
         {
-            for (int i = -rango; i <= rango; ++i) // explora columna
+            for (int i = -rango; i <= rango; ++i) // explore column
             {
                 int nuevaFila = filaActual + i;
                 int nuevaCol = colActual + j;
 
-                // Asegúrate de que la nueva posición esté dentro de los límites de la matriz y no este en las esquinas
+                // Ensure the new position is within the matrix bounds and not at a corner
                 if (nuevaFila >= 0 && nuevaFila < 10 && nuevaCol >= 0 && nuevaCol < 10 && !(nuevaFila == 0 && nuevaCol == 0) && !(nuevaFila == 0 && nuevaCol == 9) && !(nuevaFila == 9 && nuevaCol == 0) && !(nuevaFila == 9 && nuevaCol == 9))
                 {
-                    // Verifica si el valor en la posición actual este vacio
+                    // Check if the position is empty
                     if (matrixToSearch[nuevaFila][nuevaCol] == '.' || matrizBinSc[nuevaFila][nuevaCol] == 1)
                     {
-                        // Has encontrado la posición más cercana, puedes hacer lo que necesites con ella
-                        return (nuevaFila * 10) + nuevaCol; // Puedes terminar la búsqueda si solo quieres la posición más cercana
+                        // Found the nearest empty position
+                        return (nuevaFila * 10) + nuevaCol; // Return the nearest position if only one is needed
                     }
                 }
             }
         }
 
-        // Si no se encuentra el valor en el rango actual, aumenta el rango para la próxima iteración
+        // If the value is not found in the current range, increase the range for the next iteration
         rango++;
 
-        //  Puedes agregar una condición para salir del bucle si el rango se vuelve demasiado grande
+        //  You can add a condition to exit the loop if the range becomes too large
         if (rango > 11)
         {
             // Serial.println("When Reordering, not found an empty position.");
@@ -4480,38 +4479,38 @@ int buscarPosicionCercanaVacia(int filaActualAux, int colActualAux, char matrixT
 
 int buscarPosicionCercanaPieza(int filaActualAux, int colActualAux, char piezaObjetivo, char matrixToSearch[10][10])
 {
-    int filaActual = filaActualAux; // Fila actual alrededor de la cual estás buscando
-    int colActual = colActualAux;   // Columna actual alrededor de la cual estás buscando
+    int filaActual = filaActualAux; // Current row being searched around
+    int colActual = colActualAux;   // Current column being searched around
 
-    int rango = 1; // Inicializa el rango de búsqueda
+    int rango = 1; // Initialize the search range
 
     while (true)
     {
-        // Explora las posiciones dentro del rango actual
-        for (int j = -rango; j <= rango; ++j) // explora fila
+        // Explore positions within the current range
+        for (int j = -rango; j <= rango; ++j) // explore row
         {
-            for (int i = -rango; i <= rango; ++i) // explora columna
+            for (int i = -rango; i <= rango; ++i) // explore column
             {
                 int nuevaFila = filaActual + i;
                 int nuevaCol = colActual + j;
 
-                // Asegúrate de que la nueva posición esté dentro de los límites de la matriz y no este en las esquinas
+                // Ensure the new position is within the matrix bounds and not at a corner
                 if (nuevaFila >= 0 && nuevaFila < 10 && nuevaCol >= 0 && nuevaCol < 10 && !(nuevaFila == 0 && nuevaCol == 0) && !(nuevaFila == 0 && nuevaCol == 9) && !(nuevaFila == 9 && nuevaCol == 0) && !(nuevaFila == 9 && nuevaCol == 9))
                 {
-                    // Verifica si el valor en la posición actual este vacio
+                    // Check if the position holds the target piece
                     if (matrizObjetivo[nuevaFila][nuevaCol] != 'L' && matrixToSearch[nuevaFila][nuevaCol] == piezaObjetivo && matrizBinSc[nuevaFila][nuevaCol] == 0)
                     {
-                        // Has encontrado la posición más cercana, puedes hacer lo que necesites con ella
-                        return (nuevaFila * 10) + nuevaCol; // Puedes terminar la búsqueda si solo quieres la posición más cercana
+                        // Found the nearest matching position
+                        return (nuevaFila * 10) + nuevaCol; // Return the nearest position if only one is needed
                     }
                 }
             }
         }
 
-        // Si no se encuentra el valor en el rango actual, aumenta el rango para la próxima iteración
+        // If the value is not found in the current range, increase the range for the next iteration
         rango++;
 
-        //  Puedes agregar una condición para salir del bucle si el rango se vuelve demasiado grande
+        //  You can add a condition to exit the loop if the range becomes too large
         if (rango > 11)
         {
             // Serial.println("When Reordering, not found a close piece.");

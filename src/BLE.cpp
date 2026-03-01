@@ -88,7 +88,7 @@ BLECharacteristic *generalCharacteristic_takeback;
 
 BLECharacteristic *generalCharacteristic_voice;
 BLECharacteristic *generalCharacteristic_matrix_init_game;
-BLECharacteristic *fileCharacteristic_receiveOta; // Actualizacion por Ota
+BLECharacteristic *fileCharacteristic_receiveOta; // OTA update characteristic
 // BLECharacteristic *fileCharacteristic_notification_matrix;
 
 BLECharacteristic *generalCharacteristic_playlist;
@@ -131,7 +131,7 @@ class generalCallbacks_select_mode : public BLECharacteristicCallbacks
     void onWrite(BLECharacteristic *characteristic)
     {
         std::string rxData = characteristic->getValue();
-        modeChess = atoi(rxData.c_str()); // Usar atoi para convertir a entero
+        modeChess = atoi(rxData.c_str()); // Use atoi to convert to integer
         // Serial.println("Mode from BLE: " + String(modeChess));
         preferences.begin("myApp", false);
         preferences.putInt("modeGameplay", modeChess);
@@ -985,36 +985,36 @@ void Bluetooth::batterySim()
 
     // Serial.println("============================SimBattery: " + String(batteryStatus_));
 
-    if (previousWallStatus && !wallStatus) // Desconectado de la corriente
+    if (previousWallStatus && !wallStatus) // Disconnected from power
     {
         initialTime = millis();
         timeMoving = 0;
         previousWallStatus = wallStatus;
         batteryInit = batteryStatus_;
-        // Serial.println("--------------------Desconectado de la corriente");
+        // Serial.println("--------------------Disconnected from power");
     }
-    else if (!previousWallStatus && wallStatus) // Conectado a la corriente
+    else if (!previousWallStatus && wallStatus) // Connected to power
     {
         initialTimeCharging = millis();
         previousWallStatus = wallStatus;
         batteryInit = batteryStatus_;
-        // Serial.println("--------------------Conectado a la corriente");
+        // Serial.println("--------------------Connected to power");
     }
 
     unsigned long totalTimeOn = millis() - initialTime;
-    if (timeMoving > totalTimeOn) // En caso de que estuviera moviendose cuando se descoencto de la corriente, descartamos ese tiempo para que no se haga mayor
+    if (timeMoving > totalTimeOn) // If it was moving when disconnected from power, discard that time so it does not accumulate
     {
-        //  Serial.println("======================Trigerea coreecion");
+        //  Serial.println("======================Correction triggered");
         timeMoving = 0;
     }
     unsigned long timeOnHold = totalTimeOn - timeMoving;
     unsigned long timeCharging = millis() - initialTimeCharging;
 
-    if (wallStatus) // Conectado a la corriente
+    if (wallStatus) // Connected to power
     {
         if (charging)
         {
-            // Serial.println("--------------------Tiempo cargando: " + String(timeCharging));
+            // Serial.println("--------------------Charging time: " + String(timeCharging));
             batteryStatus_ = batteryInit + timeCharging * chargeRate;
         }
         if (doneCharging)
@@ -1024,9 +1024,9 @@ void Bluetooth::batterySim()
             //  Serial.println("--------------------Done Charging: " + String(batteryStatus_));
         }
     }
-    else // No conectado a la corriente
+    else // Not connected to power
     {
-        // Serial.printf("--------------------Tiempo total: %lu Time Moving: %lu time OnHold: %lu \n", totalTimeOn, timeMoving, timeOnHold);
+        // Serial.printf("--------------------Total time: %lu Time Moving: %lu time OnHold: %lu \n", totalTimeOn, timeMoving, timeOnHold);
         batteryStatus_ = batteryInit - timeOnHold * dischargeRateOnHold - timeMoving * dischargeRateMoving;
     }
 
@@ -1042,7 +1042,7 @@ void Bluetooth::batterySim()
 
 void Bluetooth::init()
 {
-    // Inicializar Bateria antes de cualquier cosa
+    // Initialize battery before anything else
     batteryInit = batteryCheck(0);
     pinMode(4, INPUT);
     int doneCharging = batteryCheck(2);
@@ -1051,7 +1051,7 @@ void Bluetooth::init()
     initialTime = millis();
     previousWallStatus = wallStatus;
 
-    if (batteryInit == -1) // NO BATERIA
+    if (batteryInit == -1) // NO BATTERY
     {
         Serial.println("--------------------NO BATTERY");
         batteryStatustoApp = "-1";
@@ -1059,7 +1059,7 @@ void Bluetooth::init()
     }
     else
     {
-        batteryInit = (wallStatus) ? batteryInit * 0.95 : batteryInit; // en 3061 es el 95%
+        batteryInit = (wallStatus) ? batteryInit * 0.95 : batteryInit; // at 3061 this is 95%
 
         if (wallStatus && doneCharging && batteryInit > 2800 && batteryInit < 3500)
         {
@@ -1068,7 +1068,7 @@ void Bluetooth::init()
             preferences.end();
             Serial.println("-----Changing MaxBattery: " + String(batteryInit));
         }
-        if (batteryInit == 4095) // Error de lectura
+        if (batteryInit == 4095) // Read error
         {
             Serial.println("Error de Lectura Bateria");
             batteryInit = (doneCharging) ? maxBattery : 2895;
@@ -1087,7 +1087,7 @@ void Bluetooth::init()
     }
     Serial.printf("Battery Status: %f doneCharging: %d wallStatus: %d\n", batteryStatus_, doneCharging, wallStatus);
 
-    // Trae todas las inicializaciones desde memoria.
+    // Load all initial settings from memory.
     preferences.begin("myApp", true);
     String randomPhantom = "Phantom " + String(preferences.getInt("phantomName", -1));
     modeChess = preferences.getInt("modeGameplay", -1);
@@ -1346,7 +1346,7 @@ void Bluetooth::init()
     uint16_t latency = 0;
     uint16_t max_int = 0x20; // max_int = 0x20 * 1.25ms = 32 * 1.25ms = 40ms
     uint16_t min_int = 0x10; // min_int = 0x10 * 1.25ms = 16 * 1.25ms = 20ms
-    uint16_t timeout = 800;  // timeout = 800 * 10ms = 8000ms (8 segundos)
+    uint16_t timeout = 800;  // timeout = 800 * 10ms = 8000ms (8 seconds)
     pServer->updateConnParams(1, min_int, max_int, latency, timeout);
     BLEDevice::startAdvertising();
 }
@@ -1374,7 +1374,7 @@ void Bluetooth::resetVerifNewCommandBluetooth()
 
 void Bluetooth::setStatus(String status)
 {
-    generalCharacteristic_status_board->setValue(status); // Cambio para la libreria NimBLe
+    generalCharacteristic_status_board->setValue(status); // Updated for the NimBLE library
     generalCharacteristic_status_board->notify();
     Serial.println("Physical move to App: " + status);
 }
@@ -1391,13 +1391,13 @@ void Bluetooth::sendMatrixToApp(String error, bool sensores[10][10], char matrix
             strMatriz += matrixToSend[i][j];
         }
     }
-    generalCharacteristic_send_matrix->setValue(error + "," + strMatriz + "," + strSensores); // Cambio para la libreria NimBLe
+    generalCharacteristic_send_matrix->setValue(error + "," + strMatriz + "," + strSensores); // Updated for the NimBLE library
     generalCharacteristic_send_matrix->notify();
 }
 
 void Bluetooth::sendTestModeError(String error)
 {
-    generalCharacteristic_send_testMode_Error->setValue(error); // Cambio para la libreria NimBLe
+    generalCharacteristic_send_testMode_Error->setValue(error); // Updated for the NimBLE library
     generalCharacteristic_send_testMode_Error->notify();
     // Serial.println("To Ble: " + error);
 }
@@ -1477,10 +1477,10 @@ int Bluetooth::gameToPlay(int mode)
     int playlistSize = 0;
     int gameToPlay = 0;
 
-    if (playlist.length() > 0) // Si hay playlist y hay un indice
+    if (playlist.length() > 0) // If there is a playlist and an index
     {
         int *playlistIndices = new int[200];
-        for (int i = 0; i < playlist.length(); i++) // Separa los indices de los juegos de string a un vector de enteros
+        for (int i = 0; i < playlist.length(); i++) // Parse game indices from the string into an integer array
         {
             if (playlist.charAt(i) == '-')
             {
@@ -1489,9 +1489,9 @@ int Bluetooth::gameToPlay(int mode)
             }
         }
         lastGametoPlay = playlist.substring(currentIndexLocal).toInt();
-        playlistIndices[playlistSize++] = lastGametoPlay; // Agrega el ultimo indice
-                                                          // playlistIndices[playlistSize++] = playlistData.substring(currentIndexLocal).toInt();; // Agrega el ultimo indice
-                                                          // comparar el indice actual con el tamaño de la playlist, si se sale de rango mandarlo al inicio
+        playlistIndices[playlistSize++] = lastGametoPlay; // Add the last index
+                                                          // playlistIndices[playlistSize++] = playlistData.substring(currentIndexLocal).toInt();; // Add the last index
+                                                          // compare the current index to the playlist size; if out of range, reset to the beginning
         if (currentIndex.toInt() >= playlistSize)
         {
             Serial.println("Current Index out of range, setting to 0");
@@ -1516,14 +1516,14 @@ int Bluetooth::gameToPlay(int mode)
         // Serial.println("Playlist String: " + playlist);
         // Serial.println("Game to Play from BLE: " + String(gameToPlay));
     }
-    else // Si no hay playlist o no hay indice, se detiene y poner estado de pausa
+    else // If there is no playlist or no index, stop and set paused state
     {
         return -1;
     }
 
     if (mode == 1)
     {
-        // Aqui es el aumento natural del indice, debemos cuidar lo siguiente: si sculptureRepeat 0 normal mode, it stops playing when arriving to the final game, si sculpture repeat es 1 plays the same game everytime, si sculpture repeat es 2 plays the whole playlist again
+        // This is the natural index increment. Notes: if sculptureRepeat is 0 (normal mode), it stops playing when reaching the last game; if sculptureRepeat is 1, it plays the same game every time; if sculptureRepeat is 2, it replays the whole playlist
         if (sculptureRepeat == 0)
         {
             if (currentIndex.toInt() == playlistSize - 1)
@@ -1669,7 +1669,7 @@ int Bluetooth::getSingleMove()
 
 float Bluetooth::getOffsetPieces()
 {
-    // bloquear offsetPieces en un  rango de 0 a 5
+    // clamp offsetPieces to the range 0–5
     if (offsetPieces.toInt() < 0)
     {
         offsetPieces = "0";
