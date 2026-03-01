@@ -10,9 +10,9 @@ extern unsigned long timeMoving;
 #define MODELFINAL // Lalo
 
 //------------------------------------------------------------------------------
-#define COMPARE_IMPRIME 1 // 001  0 no imprime, 1 imprime.
-#define COMPARE_CENTRA 2  // 010 0 no centra especifica, 1 centra especifica.
-#define COMPARE_HOME 4    // 100 0 no hace home, 1 hace home.
+#define COMPARE_IMPRIME 1 // 001  0 = no print, 1 = print.
+#define COMPARE_CENTRA 2  // 010  0 = no specific centering, 1 = specific centering.
+#define COMPARE_HOME 4    // 100  0 = no homing, 1 = do homing.
 
 #define magnet1 19 // 19
 #define magnet2 22 // 23

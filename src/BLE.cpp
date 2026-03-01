@@ -1026,7 +1026,7 @@ void Bluetooth::batterySim()
     }
     else // Not connected to power
     {
-        // Serial.printf("--------------------Tiempo total: %lu Time Moving: %lu time OnHold: %lu \n", totalTimeOn, timeMoving, timeOnHold);
+        // Serial.printf("--------------------Total time: %lu Time Moving: %lu time OnHold: %lu \n", totalTimeOn, timeMoving, timeOnHold);
         batteryStatus_ = batteryInit - timeOnHold * dischargeRateOnHold - timeMoving * dischargeRateMoving;
     }
 

@@ -349,7 +349,7 @@ void sculptureMain()
                 // moveType = (singleMove == 1) ? 1 : (singleMove == 0) ? 2
                 //                                                    : 0;
 
-                if (cuentaMovimientos >= movementsinGame) // si ya se termino el juego
+                if (cuentaMovimientos >= movementsinGame) // if the game has already ended
                 {
                     if (moveType == 1)
                     {
@@ -722,7 +722,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                 // Serial.println("Matriz Actual: ");
                 // printMatrizGenerica(matrixToReorder, 10, 10);
                 // Look for its match in matrizPlus
-                // Serial.print("1. Siguiente pieza faltante en matriz Objetivo: ");
+                // Serial.print("1. Next missing piece in target matrix: ");
                 // Serial.println(matrizObjetivo[expFilObj][expColObj]);
 
                 int flagPushOutStyle = 0;
@@ -736,7 +736,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                 {
                     if (matrixToReorder[expFilObj][expColObj] != '.' || matrizBinSc[expFilObj][expColObj] == 0) // If the destination is not empty, there is a blocking piece
                     {
-                        // Serial.println("2. Hay una pieza estorbando en el objetivo");
+                        // Serial.println("2. There is a blocking piece at the target position");
                         for (int l = 0; l < 10 && flagPushOutStyle != 1; l++) // Explore columns of the target matrix
                         {
                             for (int k = 0; k < 10 && flagPushOutStyle != 1; k++) // Explore rows of the target matrix
@@ -751,12 +751,12 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                         }
                         if (flagPushOutStyle == 1) // If the blocking piece is needed elsewhere and that position is empty
                         {
-                            // Serial.println("2.1 Moviendo pieza SECUNDARIA a su OBJETIVO");
+                            // Serial.println("2.1 Moving SECONDARY piece to its TARGET");
                             movimientoSimplificado(expFilObj, expColObj, posfinalEstorboK, posfinalEstorboL, matrixToReorder);
                             matrizObjetivo[posfinalEstorboK][posfinalEstorboL] = 'L'; // mark this space so it is not searched again.
 
                             // The destination should now be empty, so move the piece
-                            // Serial.println("2.1.1 Moviendo pieza PRIMARIA a su OBJETIVO");
+                            // Serial.println("2.1.1 Moving PRIMARY piece to its TARGET");
                             movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder);
                             matrizObjetivo[expFilObj][expColObj] = 'L'; // mark this space so it is not searched again.
                         }
@@ -767,11 +767,11 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                             int posVaciaFila = posVacia / 10;                                                 // Get the row
                             int posVaciaCol = posVacia % 10;                                                  // Get the column
 
-                            // Serial.println("2.2 Moviendo pieza SECUNDARIA a espacio VACIO");
+                            // Serial.println("2.2 Moving SECONDARY piece to empty space");
                             movimientoSimplificado(expFilObj, expColObj, posVaciaFila, posVaciaCol, matrixToReorder); // Move the blocking piece; returns when it has been removed
 
                             // The destination should now be empty, so move the piece
-                            // Serial.println("2.2.1 Moviendo pieza PRIMARIA a su OBJETIVO");
+                            // Serial.println("2.2.1 Moving PRIMARY piece to its TARGET");
                             movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // move the piece to its target position
                             matrizObjetivo[expFilObj][expColObj] = 'L';                                                         // mark this space so it is not searched again.
                         }
@@ -779,7 +779,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                     else
                     {
 
-                        // Serial.println("3. Moviendo pieza PRIMARIA a su OBJETIVO");
+                        // Serial.println("3. Moving PRIMARY piece to its TARGET");
                         movimientoSimplificado(piezaCercaObjFila, piezaCercaObjCol, expFilObj, expColObj, matrixToReorder); // move the piece to its target position
                         matrizObjetivo[expFilObj][expColObj] = 'L';
                         // mark these spaces so they are not searched again.
@@ -787,7 +787,7 @@ void reorderChessboardPlus(int modo, char matrizObjetivoAux[10][10], char matrix
                 }
                 else
                 {
-                    // Serial.println("4. EXCPECION: no hay pieza, saltar");
+                    // Serial.println("4. EXCEPTION: no piece found, skipping");
                     matrixToReorder[expFilObj][expColObj] = matrizObjetivo[expFilObj][expColObj];
                 }
             }
@@ -955,7 +955,7 @@ int compareMatrixVsSensorsPlus(int modo, char matrixToCompare[10][10])
             }
             else if (piezasOutofPos > 0)
             {
-                // HACER EL SONIDO CADA 5 SEGUNDOS, PERO ENVIAR EL ERROR SOLO CUANDO CAMBIA LA MATRIZ
+                // PLAY SOUND EVERY 5 SECONDS, BUT SEND ERROR ONLY WHEN THE MATRIX CHANGES
                 if (millis() - tiempoInicio >= 5000 || ciclosHastaSalir == 1)
                 {
                     soundHandler(6);
@@ -1059,7 +1059,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         // desfaseSensado();
 
         detectChessBoard(matrizBinSc);
-        // printf("\nSensor inicio: %d final: %d\n", matrizBinSc[escaqueFilaInit][escaqueColInit], matrizBinSc[escaqueFilaEnd][escaqueColEnd]);
+        // printf("\nSensor start: %d end: %d\n", matrizBinSc[escaqueFilaInit][escaqueColInit], matrizBinSc[escaqueFilaEnd][escaqueColEnd]);
         pieceArrived = (matrizBinSc[escaqueFilaInit][escaqueColInit] && !matrizBinSc[escaqueFilaEnd][escaqueColEnd]) ? true : false;
         intentos++;
     }
@@ -1069,7 +1069,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
     {
         if (testModeSculpture == false) // normal
         {
-            while (!pieceArrived && waitforPiece) //( BleChess.getModeChess() == "1" || (BleChess.getModeChess() == "2" && reorderChessboard == false))//(pieceArrived == false && BleChess.getModeChess() == "1") || (BleChess.getModeChess() == "2" && reorderChessboard == false) cuando esta reordenando en playmode que le valga verga.
+            while (!pieceArrived && waitforPiece) //( BleChess.getModeChess() == "1" || (BleChess.getModeChess() == "2" && reorderChessboard == false))//(pieceArrived == false && BleChess.getModeChess() == "1") || (BleChess.getModeChess() == "2" && reorderChessboard == false) when reordering in play mode
             {
                 if (millis() - timerlocal > 10000)
                 {
@@ -1121,13 +1121,13 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
         deactivateAllMagnets();
 
         unsigned long elapsedTime = millis() - timeSculpture;
-        unsigned long minutes = (elapsedTime / 60000) % 60; // Convertir milisegundos a minutos
-        unsigned long seconds = (elapsedTime / 1000) % 60;  // Convertir milisegundos a segundos
+        unsigned long minutes = (elapsedTime / 60000) % 60; // Convert milliseconds to minutes
+        unsigned long seconds = (elapsedTime / 1000) % 60;  // Convert milliseconds to seconds
         Serial.printf("Elapsed time: %lu min %lu sec\n", minutes, seconds);
         Serial.println("Piece moved successfully.");
         Serial.println();
 
-        if (millis() - timeSculpture > 600000) // 600000) // 10 minutos = 600000
+        if (millis() - timeSculpture > 600000) // 600000) // 10 minutes = 600000
         {
             Serial.println("✓ Sculpture Mode Test Finished");
             BleChess.setMode(4);
@@ -1136,7 +1136,7 @@ void movimientoSimplificado(int escaqueFilaInit, int escaqueColInit, int escaque
     }
 }
 
-//==============================================================MOVIMIENTO=====================================================
+//==============================================================MOVEMENT=======================================================
 void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedbyUser)
 {
     configAndCurrentPosManager(setSpeedbyUser, driverMicroSteps);
@@ -1169,7 +1169,7 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     //===============================================DELETE TRAJECTORY DUPLICATES===============================================
     double **speedperStep = nullptr;
     int **numberofSteps = nullptr;
-    double *timeToPosition = new double[numPointsFinal]; // Reserva espacio para numPointsFinal elementos de tipo double
+    double *timeToPosition = new double[numPointsFinal]; // Allocate space for numPointsFinal elements of type double
 
     numberofSteps = new int *[numPointsFinal];
     for (int i = 0; i < numPointsFinal; i++)
@@ -1370,8 +1370,8 @@ void accelRampV3(float **trayectoriaFinal, int numPointsFinal, double setSpeedby
     //=======================================================INVERSE KINEMATICS=======================================================
 
     //=====================================================SPEED AND ACCELERATION=========================================================
-    float umbralInferior = 0.52;                    // Aproximadamente 30 grados en radianes
-    float umbralSuperior = 2 * PI - umbralInferior; // Cerca de 330 grados en radianes
+    float umbralInferior = 0.52;                    // Approximately 30 degrees in radians
+    float umbralSuperior = 2 * PI - umbralInferior; // Approximately 330 degrees in radians
     std::vector<int> puntosCambioDireccion;
 
     //--------------------------------------------------Calculates Speed-------------------------------------------------------
@@ -1852,9 +1852,9 @@ void IRAM_ATTR timeEnabled()
         stepper2.disableOutputs();
     }
 }
-//==============================================================MOVIMIENTO=====================================================
+//==============================================================MOVEMENT=======================================================
 
-//==========================================================GENERADOR DE TRAYECTORIA=====================================================
+//==========================================================TRAJECTORY GENERATOR======================================================
 float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueFilaEnd, int escaqueColEnd, int &numPointsFinal)
 {
 
@@ -1912,7 +1912,7 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
 
         if (totalCurvas == 2) // short between-line movement with 2 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints); // manda a traer los puntos de final de primera curva a inicio de segunda curva
+            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints); // get the points from the end of the first curve to the start of the second curve
 
             numPointsFinal = numPoints + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
 
@@ -1941,8 +1941,8 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
 
         if (totalCurvas == 3) // long between-line movement with 3 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints);                         // manda a traer los puntos de final de primera curva a inicio de segunda curva
-            interpolatedPoints2 = interpolatePoints(arrayCurvas[(totalPuntosEnCurva * 2) - 1][0], arrayCurvas[(totalPuntosEnCurva * 2) - 1][1], arrayCurvas[totalPuntosEnCurva * 2][0], arrayCurvas[totalPuntosEnCurva * 2][1], numPointsAux); // manda a traer los puntos de final de segunda curva a inicio de tercera curva
+            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints);                         // get the points from the end of the first curve to the start of the second curve
+            interpolatedPoints2 = interpolatePoints(arrayCurvas[(totalPuntosEnCurva * 2) - 1][0], arrayCurvas[(totalPuntosEnCurva * 2) - 1][1], arrayCurvas[totalPuntosEnCurva * 2][0], arrayCurvas[totalPuntosEnCurva * 2][1], numPointsAux); // get the points from the end of the second curve to the start of the third curve
 
             numPointsFinal = numPoints + numPointsAux + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
 
@@ -2051,7 +2051,7 @@ float **generarTrayectoria(int escaqueFilaInit, int escaqueColInit, int escaqueF
 void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &totalCurvas, double arrayPuntosFinal[][2])
 // Returns the total number of points sent.
 {
-    //=======Puntos intermedios para trayectoria del caballo=========
+    //=======Intermediate points for knight trajectory=========
     float diferenciaX;
     float diferenciaY;
     float puntoInterX;
@@ -2428,7 +2428,7 @@ float **interpolatePoints(float x1, float y1, float x2, float y2, int &numPoints
     // Round the number of points to the nearest integer
     numPoints = static_cast<int>(hypotenuse / distanciaEntrePuntos + 0.5f);
 
-    // Asegurarse de que numPoints sea al menos 2 para evitar divisiones por cero
+    // Ensure numPoints is at least 2 to avoid division by zero
     if (numPoints < 2)
     {
         numPoints = 2;
@@ -2495,9 +2495,9 @@ void calcularOffsets(int electroActivo, float &electroOffsetX, float &electroOff
     }
 }
 
-//==========================================================GENERADOR DE TRAYECTORIA=====================================================
+//==========================================================TRAJECTORY GENERATOR======================================================
 
-//==========================================================DECODIFICA PARTIDAS=====================================================
+//==========================================================GAME DECODING=====================================================
 String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char y_finchar, char action, char piezacolor, char matrixToDecode[10][10], bool mode)
 {
     int x_ini;
@@ -2616,7 +2616,7 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
                 }
             }
 
-            if (matrixToDecode[x_fin][y_fin] == 'P' || matrixToDecode[x_fin][y_fin] == 'p') // Si es un peon
+            if (matrixToDecode[x_fin][y_fin] == 'P' || matrixToDecode[x_fin][y_fin] == 'p') // If it is a pawn
             {
                 for (int i = 8; i >= 1; i--) // scan for an available graveyard spot; 0 and 9 are excluded as corners. Placed ascending or descending.
                 {
@@ -2650,7 +2650,7 @@ String decodificaMovimiento(char x_inichar, char y_inichar, char x_finchar, char
                 {
                     if (matrixToDecode[i][j] == '.' && matrizBinSc[i][j] == 1 && (i == 0 || i == 9 || j == 0 || j == 9) && !(i == 0 && j == 0) && !(i == 9 && j == 9) && !(i == 0 && j == 9) && !(i == 9 && j == 0))
                     {
-                        // Serial.println("Lugar random en cementerio encontrado. Moviendo pieza ahi.");
+                        // Serial.println("Random graveyard spot found. Moving piece there.");
                         x_finaux = i;
                         y_finaux = j;
                         lugarDisponible = true;
@@ -2772,7 +2772,7 @@ String readFromFileSc(int gameToPlay)
         // Serial.print("      HEX: ");
         // Serial.println(game[indexA], DEC);
 
-        if (game[indexA] == ' ') // Si encuentra un espacio, significa que empieza un movimiento
+        if (game[indexA] == ' ') // If a space is found, a new move is starting
         {
             for (int i = 0; i < 7; i++) // initialize the entire move to V
             {
@@ -2796,10 +2796,10 @@ String readFromFileSc(int gameToPlay)
             if (game[indexA] == ' ')
             {
                 String auxDecode = decodeChessMove(movChessInd, index_mov);
-                // Serial.print("Movimiento: ");
+                // Serial.print("Move: ");
                 // Serial.println(auxDecode);
                 String localMove = decodificaMovimiento(auxDecode[2], auxDecode[3], auxDecode[4], auxDecode[5], auxDecode[1], auxDecode[0], matrixToSimulateGame, false);
-                // Serial.print("Movimiento decodificado: ");
+                // Serial.print("Decoded move: ");
                 //  Serial.println(localMove);
                 // simulating the move
                 matrixToSimulateGame[localMove[2] - '0'][localMove[3] - '0'] = matrixToSimulateGame[localMove[0] - '0'][localMove[1] - '0'];
@@ -2915,9 +2915,9 @@ String decodeChessMove(char movChess[7], int cuentaMovimientos)
         return strChessMove;
     }
 }
-//============================================================DECODIFICA PARTIDAS=====================================================
+//============================================================GAME DECODING=====================================================
 
-//==============================================================SENSADO=====================================================
+//==============================================================SENSING======================================================
 void sensorsDir()
 {
     dirMux[0][0] = 464; // sensor farthest from middle
@@ -3038,9 +3038,9 @@ void updateSensors()
     {
         for (int j = 0; j < 10; j++)
         {
-            int muxOut = dirMux[i][j] / 100;       // Obtiene las centenas
-            int mux16 = (dirMux[i][j] % 100) / 10; // Obtiene las decenas
-            int mux8 = dirMux[i][j] % 10;          // Obtiene las unidades
+            int muxOut = dirMux[i][j] / 100;       // Get the hundreds digit
+            int mux16 = (dirMux[i][j] % 100) / 10; // Get the tens digit
+            int mux8 = dirMux[i][j] % 10;          // Get the units digit
             digitalWrite(mux16_0, mux16 & 0b00000001);
             digitalWrite(mux16_1, (mux16 >> 1) & 0b00000001);
             digitalWrite(mux16_2, (mux16 >> 2) & 0b00000001);
@@ -3103,7 +3103,7 @@ void updateSensors()
     }
 
     sensorUpdate[0][0] = true;
-    // sensorUpdate[0][9] = false; ES EL DE CALIBRACION
+    // sensorUpdate[0][9] = false; THIS IS THE CALIBRATION ONE
     sensorUpdate[9][0] = true;
     sensorUpdate[9][9] = true;
 }
@@ -3174,9 +3174,9 @@ void desfaseSensado()
     // Move the system to coordinates xprima, yprima
     rawMovement(xprima, yprima, -4, currentXposition, currentYposition);
 }
-//===============================================================SENSADO=====================================================
+//===============================================================SENSING=======================================================
 
-//==========================================================OPERACION MATRICIAL=====================================================
+//==========================================================MATRIX OPERATIONS=====================================================
 void printMatrizGenerica(char matriz[filas][columnas], int filas, int columnas)
 {
 
@@ -3240,9 +3240,9 @@ void initMatrizPlus(char matrixToInit[10][10])
         matrixToInit[i][7] = 'P';
     }
 }
-//==========================================================OPERACION MATRICIAL=====================================================
+//==========================================================MATRIX OPERATIONS=====================================================
 
-//==========================================================CALIBRACION MECANICA=====================================================
+//==========================================================MECHANICAL CALIBRATION=====================================================
 void configAndCurrentPosManager(int setSpeedbyUser, float &driverMicroSteps)
 {
     //===============================================DRIVERS CONFIGURATION===============================================
@@ -3460,9 +3460,9 @@ void rawMovement(float filaEnd, float colEnd, int magnet, float &lastRawposition
     float dirDeGiro1 = stepsM1 > 0 ? 1 : -1;
     float dirDeGiro2 = stepsM2 > 0 ? 1 : -1;
 
-    /*     int muxOut = dirMux[int(filaEnd)][int(colEnd)] / 100;       // Obtiene las centenas
-        int mux16 = (dirMux[int(filaEnd)][int(colEnd)] % 100) / 10; // Obtiene las decenas
-        int mux8 = dirMux[int(filaEnd)][int(colEnd)] % 10;          // Obtiene las unidades
+    /*     int muxOut = dirMux[int(filaEnd)][int(colEnd)] / 100;       // Get the hundreds digit
+        int mux16 = (dirMux[int(filaEnd)][int(colEnd)] % 100) / 10; // Get the tens digit
+        int mux8 = dirMux[int(filaEnd)][int(colEnd)] % 10;          // Get the units digit
         digitalWrite(mux16_0, mux16 & 0b00000001);
         digitalWrite(mux16_1, (mux16 >> 1) & 0b00000001);
         digitalWrite(mux16_2, (mux16 >> 2) & 0b00000001);
@@ -3810,8 +3810,8 @@ void configDrivers()
     driver2.pwm_autoscale(true);
 
     digitalWrite(ENABLE_PIN, HIGH);
-    driver.rms_current(HOLD_CURRENT);  // Protecction de temperatura y consumo de corriente
-    driver2.rms_current(HOLD_CURRENT); // Protecction de temperatura y consumo de corriente
+    driver.rms_current(HOLD_CURRENT);  // Temperature and current consumption protection
+    driver2.rms_current(HOLD_CURRENT); // Temperature and current consumption protection
     delay(150);
 }
 
@@ -4090,7 +4090,7 @@ void mechanicalCalibration(int calibrationMode)
 
             if (stallCounter < 4)
             {
-                // Serial.printf("PREPARANDO OTRO ROUND DE HOMING \n\n\n\n");
+                // Serial.printf("PREPARING ANOTHER HOMING ROUND \n\n\n\n");
                 stallVolatile = stalltoUse;
                 stallVolatileD2 = stalltoUseD2;
                 rawMovementStallGuard(-10, 0, slowSpeed, activeMotors, stallVolatile, stallVolatileD2);
@@ -4182,7 +4182,7 @@ void mechanicalCalibration(int calibrationMode)
 
             if (stallCounter < 4)
             {
-                // Serial.printf("PREPARANDO OTRO ROUND DE HOMING \n\n\n\n");
+                // Serial.printf("PREPARING ANOTHER HOMING ROUND \n\n\n\n");
                 stallVolatile = stalltoUse;
                 stallVolatileD2 = stalltoUseD2;
                 rawMovementStallGuard(0, 10, slowSpeed, activeMotors, stallVolatile, stallVolatileD2);
@@ -4236,7 +4236,7 @@ void mechanicalCalibration(int calibrationMode)
      }  */
 }
 
-//==========================================================CALIBRACION MECANICA=====================================================
+//==========================================================MECHANICAL CALIBRATION=====================================================
 void sensorsCalibration(int filaEnd, int colEnd, int modo, float &totalX, float &totalY)
 {
     // mode 0 -> sensor calibration
@@ -4403,7 +4403,7 @@ void soundHandler(int soundMode)
     case 9: // Special sound for battery
         cute.play(PIRATES);
         break;
-    case 10: // jaque
+    case 10: // check
         if (_sound == 2)
         {
             delay(1000);
@@ -4418,7 +4418,7 @@ void soundHandler(int soundMode)
             cute._tone(NOTE_A0, 1000, 30);
         }
         break;
-    case 11: // jaque mate
+    case 11: // checkmate
         if (_sound == 2)
         {
             cute._tone(NOTE_Gb3, 2000, 30);

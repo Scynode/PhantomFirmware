@@ -1343,7 +1343,7 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
     char x_finChar = array[5];
     char y_finChar = array[6];
 
-    //-------------------------------------Encuentra Pieza
+    //-------------------------------------Find Piece
     int x_ini = 0, x_fin = 0, y_ini = 0, y_fin = 0;
 
     char posCoordBoardX[8] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
@@ -1384,9 +1384,9 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
         colorTurn = 'B';
     }
 
-    //-------------------------------------Encuentra Pieza
+    //-------------------------------------Find Piece
 
-    //-------------------------------------Encuentra Movimiento
+    //-------------------------------------Find Move
     if (array[4] == '-') // Simple move
     {
         movementChess = '0';
@@ -1424,7 +1424,7 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
     }
 
     Serial.println("Movimiento: " + String(movementChess));
-    //-------------------------------------Encuentra Movimiento
+    //-------------------------------------Find Move
     Serial.println("Movimiento automatico, Initial Matrix: ");
     printMatrizGenerica(matrixToAutomaticMove, 10, 10);
 
