@@ -67,7 +67,7 @@ void bleTask(void *parameter)
             BleChess.batterySim();
         }
         updateSensors();
-        vTaskDelay(1); // Da la oportunidad a otras tareas de ejecutarse
+        vTaskDelay(1); // Yields to allow other tasks to run
     }
 }
 
@@ -84,11 +84,11 @@ void setup()
     preferences.begin("factorySetup", true);
     int hardwareVersion = preferences.getInt("hardwareV", -1);
     preferences.end();
-    if (hardwareVersion == -1 || hardwareVersion == 1) // Ahorita los que ya tenemos en la version 1 en teoria no van a pasar por aqui.
+    if (hardwareVersion == -1 || hardwareVersion == 1) // Currently, units already on version 1 should not reach this point.
     {
         preferences.begin("factorySetup", false);
         preferences.clear();
-        preferences.putInt("hardwareV", 2); // Aqui vamos a cambiar la version de hardware
+        preferences.putInt("hardwareV", 2); // Change the hardware version here
         preferences.end();
         BleChess.factoryReset();
         esp_restart();
@@ -96,13 +96,13 @@ void setup()
 
     xSemaphore = xSemaphoreCreateBinary();
     xTaskCreatePinnedToCore(
-        bleTask,   // Función a ejecutar
-        "bleTask", // Nombre de la tarea
-        10000,     // Tamaño de la pila
-        NULL,      // Parámetro de entrada
-        1,         // Prioridad de la tarea
-        NULL,      // Handle de la tarea
-        0          // Núcleo donde se ejecutará la tarea
+        bleTask,   // Function to execute
+        "bleTask", // Task name
+        10000,     // Stack size
+        NULL,      // Input parameter
+        1,         // Task priority
+        NULL,      // Task handle
+        0          // Core where the task will run
     );
 
     //===============================================PINOUT
@@ -121,11 +121,11 @@ void setup()
     pinMode(magnet4, OUTPUT);
 
     const int magnetPins[4] = {magnet1, magnet2, magnet3, magnet4};
-    //  Desconectar todos los canales PWM de los pines de los electroimanes
+    //  Disconnect all PWM channels from the electromagnet pins
     for (int i = 0; i < 4; ++i)
     {
-        ledcDetachPin(magnetPins[i]);      // Desconectar el canal PWM del pin del electroimán
-        digitalWrite(magnetPins[i], HIGH); // Establecer el pin en alto (apagado)
+        ledcDetachPin(magnetPins[i]);      // Disconnect the PWM channel from the electromagnet pin
+        digitalWrite(magnetPins[i], HIGH); // Set the pin high (off)
     }
     // Electromagnets
 
@@ -142,14 +142,14 @@ void setup()
     pinMode(mux16Out_4, INPUT);
     // Sensors
 
-    // motores
+    // Motors
     pinMode(MOTOR_0_STEP_PIN, OUTPUT);
     pinMode(MOTOR_0_DIR_PIN, OUTPUT);
     pinMode(MOTOR_1_STEP_PIN, OUTPUT);
     pinMode(MOTOR_1_DIR_PIN, OUTPUT);
     pinMode(ENABLE_PIN, OUTPUT);
     digitalWrite(ENABLE_PIN, LOW);
-    // motores
+    // Motors
     //===============================================PINOUT
 
     sensorsDir();
@@ -174,7 +174,7 @@ void setup()
         soundHandler(7);
         Serial.println("Factory Reset Mode");
         BleChess.factoryReset();
-        esp_restart(); // NO DESACTIVA PERIFERICOS
+        esp_restart(); // DOES NOT DEACTIVATE PERIPHERALS
     }
     else
     {
@@ -215,7 +215,7 @@ float distanciaEuclidiana(float x1, float y1, float x2, float y2)
     return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 }
 
-void centroMasCercano(float x, float y, float &centroX, float &centroY, float &kprima, float &lprima) // Funcion para encontrar el escaque mas cercano a una posicion x,y
+void centroMasCercano(float x, float y, float &centroX, float &centroY, float &kprima, float &lprima) // Function to find the nearest square to a given x,y position
 {
     int k = 1;
     int l = 1;
@@ -277,7 +277,7 @@ void loop()
         float tempPosX, tempPosY;
         rawMovement(-26.6, 198.5, -2, tempPosX, tempPosY);
         BleChess.setState("In Lock Position");
-        // MANDAR ERROR CADA 5 SEGUNDOS
+        // SEND ERROR EVERY 5 SECONDS
         {
             unsigned long timer = millis();
             BleChess.sendTestModeError("MECHANISM IN LOCK POSITION, PUT SCREWS AND RESTART THE BOARD");
@@ -460,7 +460,7 @@ void testMode()
         } while (matrizBin[postocheck][postocheck] == true);
         Serial.println("✓ electromagnet " + String(electromagnet) + " On");
 
-        // Revisar los otros electroimanes en misma posicion
+        // Check the other electromagnets at the same position
         for (int i = 1; i <= 4; i++)
         {
             if (i != electromagnet)
@@ -495,13 +495,13 @@ void testMode()
     int previousElectromagnet = 0;
     for (int j = 0; j <= 9; j++)
     {
-        // Si la fila es par, iterar de derecha a izquierda
+        // If the row is even, iterate from right to left
         if (j % 2 == 0)
         {
             for (int i = 0; i <= 9; i++)
             {
                 // corners avoidance
-                if ((i == 0 && j == 0) || (i == 9 && j == 0) || (i == 0 && j == 9) || (i == 9 && j == 9)) // evita esquinas
+                if ((i == 0 && j == 0) || (i == 9 && j == 0) || (i == 0 && j == 9) || (i == 9 && j == 9)) // skip corners
                 {
                     continue;
                 }
@@ -632,12 +632,12 @@ void testMode()
                 sensorsOn2 = 0;
             }
         }
-        else // Si la fila es impar, iterar de izquierda a derecha
+        else // If the row is odd, iterate from left to right
         {
             for (int i = 9; i >= 0; i--)
             {
                 // corners avoidance
-                if ((i == 0 && j == 0) || (i == 9 && j == 0) || (i == 0 && j == 9) || (i == 9 && j == 9)) // evita esquinas
+                if ((i == 0 && j == 0) || (i == 9 && j == 0) || (i == 0 && j == 9) || (i == 9 && j == 9)) // skip corners
                 {
                     continue;
                 }
@@ -788,7 +788,7 @@ void testMode()
 
     Serial.printf("Error X: %f Y: %f\n", cableMissingX, cableMissingY);
 
-    // if error total x o error total y es mayor a 2mm entonces imprimir error, si no imprimit que salio bien
+    // if total error x or y is greater than 2mm, print error; otherwise print that it passed
     if ((posY - posY1 <= -1.5 || posY - posY1 >= 1.5))
     {
         errorMessage("✕ Cable Lenght Failed" + String(cableMissingX) + " " + String(cableMissingY));
@@ -801,7 +801,7 @@ void testMode()
 
     //-----------------------------------------After Test is finish--------------------------------
 
-    if (testFlag == -1) // testmode desde tablero
+    if (testFlag == -1) // test mode triggered from the board
     {
         Serial.println("────────────────────────────────────────────────────");
         Serial.print("► Starting Full Sculpture Mode 10 minutes Routine: ");
@@ -812,7 +812,7 @@ void testMode()
         testFlag = -2;
         return;
     }
-    else // testmode desde celular
+    else // test mode triggered from the phone
     {
         if (BleChess.getBatteryStatus() == -1)
         {
@@ -1315,12 +1315,12 @@ void soundEndGame()
     }
     Serial.println("-------------------------------------------------timeWaiting: " + String(millis() - timeWaiting));
     Serial.println("Make Sound main: " + mksound);
-    if (mksound == "1") // Jaque
+    if (mksound == "1") // Check
     {
         Serial.println("Jaque SONIDO ");
         soundHandler(10);
     }
-    if (mksound == "2") // Jaque mate
+    if (mksound == "2") // Checkmate
     {
         Serial.println("Mate SONIDO ");
         soundHandler(11);
@@ -1348,21 +1348,21 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
 
     char posCoordBoardX[8] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
     char posCoordBoardY[8] = {'8', '7', '6', '5', '4', '3', '2', '1'};
-    for (int i = 0; i < 8; i++) // Barrido en X
+    for (int i = 0; i < 8; i++) // Scan in X
     {
-        if (x_iniChar == posCoordBoardX[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (x_iniChar == posCoordBoardX[i]) // If the letter matches the letter in the array, return the position index
         {
             x_ini = i + 1;
         }
-        if (x_finChar == posCoordBoardX[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (x_finChar == posCoordBoardX[i]) // If the letter matches the letter in the array, return the position index
         {
             x_fin = i + 1;
         }
-        if (y_iniChar == posCoordBoardY[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (y_iniChar == posCoordBoardY[i]) // If the letter matches the letter in the array, return the position index
         {
             y_ini = i + 1;
         }
-        if (x_finChar == posCoordBoardY[i]) // Si la letra coincide con la letra del vector, nos manda el numero de la posicion
+        if (x_finChar == posCoordBoardY[i]) // If the letter matches the letter in the array, return the position index
         {
             y_fin = i + 1;
         }
@@ -1387,11 +1387,11 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
     //-------------------------------------Encuentra Pieza
 
     //-------------------------------------Encuentra Movimiento
-    if (array[4] == '-') // Movimiento Simple
+    if (array[4] == '-') // Simple move
     {
         movementChess = '0';
     }
-    if (array[4] == 'x') // Comer
+    if (array[4] == 'x') // Capture
     {
         movementChess = '1';
         contAnteriorPiezasMuertas++;
@@ -1416,7 +1416,7 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
         }
     }
 
-    if (movementChess == '!') // Si no se decodifica el movimiento, se regresa
+    if (movementChess == '!') // If the movement cannot be decoded, return
     {
         Serial.println("Movimiento: " + String(movementChess));
         Serial.println("===================================NO DECODIFICADO, RETURN");
@@ -1448,7 +1448,7 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
 
 String detectChangePlus(char currentMatrix[10][10], int &specialMove)
 {
-    // Devuelve 1 si se detecto cambio y no se ha colocado la pieza, devuelve 0 si se detecto cambio y ya se coloco la pieza, devuelve -1 en caso especial.
+    // Returns 1 if a change was detected and the piece has not been placed yet, 0 if a change was detected and the piece was already placed, -1 in a special case.
     // Serial.println("Detecting Change");
     bool changeFlag = LOW;
     int colocaPieza = -1;
@@ -1841,27 +1841,27 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
                     // Serial.println(CoordBoardX[iniChangeX - 1]);
                     // Serial.println(CoordBoardX[finChangeX - 1]);
                     // Serial.println("");
-                    if (piezaEnMovimiento == 'K') // Estan moviendo piezas blancas
+                    if (piezaEnMovimiento == 'K') // White pieces are being moved
                     {
-                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'g') // Enroque corto
+                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'g') // Short castling
                         {
-                            specialMove = 10; // Para identificar que es un enroque en proceso
+                            specialMove = 10; // To identify an ongoing castling move
                         }
-                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'c') // Enroque largo
+                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'c') // Long castling
                         {
-                            specialMove = 11; // Para identificar que es un enroque en proceso
+                            specialMove = 11; // To identify an ongoing castling move
                         }
                     }
 
-                    if (piezaEnMovimiento == 'k') // Estan moviendo piezas negras
+                    if (piezaEnMovimiento == 'k') // Black pieces are being moved
                     {
-                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'g') // Enroque corto
+                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'g') // Short castling
                         {
-                            specialMove = 12; // Para identificar que es un enroque en proceso
+                            specialMove = 12; // To identify an ongoing castling move
                         }
-                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'c') // Enroque largo
+                        if (CoordBoardX[iniChangeX - 1] == 'e' && CoordBoardX[finChangeX - 1] == 'c') // Long castling
                         {
-                            specialMove = 13; // Para identificar que es un enroque en proceso
+                            specialMove = 13; // To identify an ongoing castling move
                         }
                     }
                 }

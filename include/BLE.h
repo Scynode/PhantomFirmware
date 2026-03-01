@@ -11,13 +11,13 @@ extern String globalConnect;
 //#define GENERAL_UUID_NAME "7b204548-30c3-11eb-adc1-0242ac120002"
 #define GENERAL_UUID_BATTERYINFO "7b204548-40c4-11eb-adc1-0242ac120002"
 #define GENERAL_UUID_ERRORMSG "7b204d4a-30c3-11eb-adc1-0242ac120002"
-#define GENERAL_UUID_RECEIVE_MOVEMENT "c60c786b-bf3f-49d8-bd9e-c268e0519a7b" // Enviar movimiento, se envia en de la siguiente forma "M f7-f5", es la coordenada de inicio y la cordenada final del movimiento
-#define GENERAL_UUID_STATUS_BOARD "06034924-77e8-433e-ac4c-27302e5e853f"     // Al realizar un movimiento de pieza en el tablero dicho movimiento se envia a traves de la siguiente caracteristica
+#define GENERAL_UUID_RECEIVE_MOVEMENT "c60c786b-bf3f-49d8-bd9e-c268e0519a7b" // Send movement, sent in the following format "M f7-f5": the start coordinate and the end coordinate of the movement
+#define GENERAL_UUID_STATUS_BOARD "06034924-77e8-433e-ac4c-27302e5e853f"     // When a piece movement is made on the board, that movement is sent through this characteristic
 #define GENERAL_UUID_SEND_MATRIX "1b034927-77e8-433e-ac4c-27302e5e853f"
 #define GENERAL_UUID_SEND_TESTMODE_ERROR "1b034928-77e8-433e-ac4c-27302e5e853f"
 #define GENERAL_UUID_CHECK_MOVE "9cc3b57e-eee5-4d3e-8c1d-3fbd636d6780"
 
-#define FILE_UUID_RECEIVE_OTA "93601602-bbc2-4e53-95bd-a3ba326bc04b" // La caracteristica para la actualizacion por OTA
+#define FILE_UUID_RECEIVE_OTA "93601602-bbc2-4e53-95bd-a3ba326bc04b" // The characteristic for OTA updates
 
 #define GENERAL_UUID_SELECT_MODE "c08d3691-e60f-4467-b2d0-4a4b7c72777e"
 #define UUID_PLAY_INFO "d7f0b4ea-9b52-11ee-b9d1-0242ac120002"
