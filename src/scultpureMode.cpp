@@ -230,8 +230,8 @@ volatile unsigned long timerMagnets = 0;
 const int rows = 10;
 const int cols = 10;
 
-int totalPuntosEnCurva = 90;
-float distanciaEntrePuntos = 0.5;
+int totalPointsInCurve = 90;
+float distanceBetweenPoints = 0.5;
 
 char movChess[7][250];
 char targetMatrix[10][10];
@@ -1858,12 +1858,12 @@ void IRAM_ATTR timeEnabled()
 float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEnd, int squareColEnd, int &numPointsFinal)
 {
 
-    int totalCurvas = 0;
-    int numPointsCurva = 0;
+    int totalCurves = 0;
+    int numPointsCurve = 0;
     int numPoints = 0; // Will be updated based on the hypotenuse
     int numPointsAux = 0;
     int numPointsAux2 = 0;
-    double arrayCurvas[totalPuntosEnCurva * 3][2];
+    double curvesArray[totalPointsInCurve * 3][2];
     float **interpolatedPoints = nullptr;
     float **interpolatedPoints2 = nullptr;
     float **interpolatedPoints3 = nullptr;
@@ -1875,20 +1875,20 @@ float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEn
     int coordXEnd = (50 * squareRowEnd) - 225;
     int coordYEnd = (-50 * squareColEnd) + 225;
 
-    int tipodeMov = movementType(squareRowInit, squareColInit, squareRowEnd, squareColEnd);
+    int moveType = movementType(squareRowInit, squareColInit, squareRowEnd, squareColEnd);
 
-    printf("%s X%d Y%d -> X%d Y%d\n", (tipodeMov == 0) ? "Directo" : "Entre Lineas", squareRowInit, squareColInit, squareRowEnd, squareColEnd);
+    printf("%s X%d Y%d -> X%d Y%d\n", (moveType == 0) ? "Direct" : "Between Lines", squareRowInit, squareColInit, squareRowEnd, squareColEnd);
     const float generalOffset = BleChess.getOffsetPieces();
 
     //  Serial.println("generalOffset: " + String(generalOffset));
     //   ==============================================================trajectory generators ==============================================================
     //   -------------------------------------------------------------------Direct Movement --------------------------------------------------------------------
-    if (tipodeMov == 0) // direct movement
+    if (moveType == 0) // direct movement
     {
 
         interpolatedPoints = interpolatePoints(coordXInit, coordYInit, coordXEnd, coordYEnd, numPoints); // Returns a matrix with interpolated points and also sets numPoints.
 
-        numPointsFinal = numPoints + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
+        numPointsFinal = numPoints + (generalOffset / distanceBetweenPoints); // the +1 accounts for the value added at the end of the trajectory
 
         finalTrajectory = new float *[numPointsFinal];
         for (int i = 0; i < numPointsFinal; i++)
@@ -1904,17 +1904,17 @@ float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEn
     // -------------------------------------------------------------------Direct Movement --------------------------------------------------------------------
 
     // -----------------------------------------------------------------Between-Line Movement --------------------------------------------------------------------
-    else if (tipodeMov == 1) // between-line movement
+    else if (moveType == 1) // between-line movement
     {
-        moveOnTheLinev2Sc(coordXInit, coordYInit, coordXEnd, coordYEnd, totalCurvas, arrayCurvas); // Returns an integer numPoints with the total number of points (16 or 24) and an ARRAYCURVAS array with the point coordinates
+        moveOnTheLinev2Sc(coordXInit, coordYInit, coordXEnd, coordYEnd, totalCurves, curvesArray); // Returns an integer numPoints with the total number of points (16 or 24) and an curvesArray array with the point coordinates
 
-        numPointsCurva = totalCurvas * totalPuntosEnCurva;
+        numPointsCurve = totalCurves * totalPointsInCurve;
 
-        if (totalCurvas == 2) // short between-line movement with 2 curves
+        if (totalCurves == 2) // short between-line movement with 2 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints); // get the points from the end of the first curve to the start of the second curve
+            interpolatedPoints = interpolatePoints(curvesArray[totalPointsInCurve - 1][0], curvesArray[totalPointsInCurve - 1][1], curvesArray[totalPointsInCurve][0], curvesArray[totalPointsInCurve][1], numPoints); // get the points from the end of the first curve to the start of the second curve
 
-            numPointsFinal = numPoints + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
+            numPointsFinal = numPoints + numPointsCurve + (generalOffset / distanceBetweenPoints); // the +1 accounts for the value added at the end of the trajectory
 
             finalTrajectory = new float *[numPointsFinal];
             for (int i = 0; i < numPointsFinal; i++)
@@ -1922,29 +1922,29 @@ float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEn
                 finalTrajectory[i] = new float[2];
             }
 
-            for (int i = 0; i < totalPuntosEnCurva; i++)
+            for (int i = 0; i < totalPointsInCurve; i++)
             {
-                finalTrajectory[i][0] = arrayCurvas[i][0];
-                finalTrajectory[i][1] = arrayCurvas[i][1];
+                finalTrajectory[i][0] = curvesArray[i][0];
+                finalTrajectory[i][1] = curvesArray[i][1];
             }
             for (int i = 0; i < numPoints; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva][0] = interpolatedPoints[i][0];
-                finalTrajectory[i + totalPuntosEnCurva][1] = interpolatedPoints[i][1];
+                finalTrajectory[i + totalPointsInCurve][0] = interpolatedPoints[i][0];
+                finalTrajectory[i + totalPointsInCurve][1] = interpolatedPoints[i][1];
             }
-            for (int i = 0; i < totalPuntosEnCurva; i++)
+            for (int i = 0; i < totalPointsInCurve; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva + numPoints][0] = arrayCurvas[i + totalPuntosEnCurva][0];
-                finalTrajectory[i + totalPuntosEnCurva + numPoints][1] = arrayCurvas[i + totalPuntosEnCurva][1];
+                finalTrajectory[i + totalPointsInCurve + numPoints][0] = curvesArray[i + totalPointsInCurve][0];
+                finalTrajectory[i + totalPointsInCurve + numPoints][1] = curvesArray[i + totalPointsInCurve][1];
             }
         }
 
-        if (totalCurvas == 3) // long between-line movement with 3 curves
+        if (totalCurves == 3) // long between-line movement with 3 curves
         {
-            interpolatedPoints = interpolatePoints(arrayCurvas[totalPuntosEnCurva - 1][0], arrayCurvas[totalPuntosEnCurva - 1][1], arrayCurvas[totalPuntosEnCurva][0], arrayCurvas[totalPuntosEnCurva][1], numPoints);                         // get the points from the end of the first curve to the start of the second curve
-            interpolatedPoints2 = interpolatePoints(arrayCurvas[(totalPuntosEnCurva * 2) - 1][0], arrayCurvas[(totalPuntosEnCurva * 2) - 1][1], arrayCurvas[totalPuntosEnCurva * 2][0], arrayCurvas[totalPuntosEnCurva * 2][1], numPointsAux); // get the points from the end of the second curve to the start of the third curve
+            interpolatedPoints = interpolatePoints(curvesArray[totalPointsInCurve - 1][0], curvesArray[totalPointsInCurve - 1][1], curvesArray[totalPointsInCurve][0], curvesArray[totalPointsInCurve][1], numPoints);                         // get the points from the end of the first curve to the start of the second curve
+            interpolatedPoints2 = interpolatePoints(curvesArray[(totalPointsInCurve * 2) - 1][0], curvesArray[(totalPointsInCurve * 2) - 1][1], curvesArray[totalPointsInCurve * 2][0], curvesArray[totalPointsInCurve * 2][1], numPointsAux); // get the points from the end of the second curve to the start of the third curve
 
-            numPointsFinal = numPoints + numPointsAux + numPointsCurva + (generalOffset / distanciaEntrePuntos); // the +1 accounts for the value added at the end of the trajectory
+            numPointsFinal = numPoints + numPointsAux + numPointsCurve + (generalOffset / distanceBetweenPoints); // the +1 accounts for the value added at the end of the trajectory
 
             finalTrajectory = new float *[numPointsFinal];
             for (int i = 0; i < numPointsFinal; i++)
@@ -1952,35 +1952,35 @@ float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEn
                 finalTrajectory[i] = new float[2];
             }
 
-            for (int i = 0; i < totalPuntosEnCurva; i++)
+            for (int i = 0; i < totalPointsInCurve; i++)
             {
-                finalTrajectory[i][0] = arrayCurvas[i][0];
-                finalTrajectory[i][1] = arrayCurvas[i][1];
+                finalTrajectory[i][0] = curvesArray[i][0];
+                finalTrajectory[i][1] = curvesArray[i][1];
             }
             for (int i = 0; i < numPoints; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva][0] = interpolatedPoints[i][0];
-                finalTrajectory[i + totalPuntosEnCurva][1] = interpolatedPoints[i][1];
+                finalTrajectory[i + totalPointsInCurve][0] = interpolatedPoints[i][0];
+                finalTrajectory[i + totalPointsInCurve][1] = interpolatedPoints[i][1];
             }
-            for (int i = 0; i < totalPuntosEnCurva; i++)
+            for (int i = 0; i < totalPointsInCurve; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva + numPoints][0] = arrayCurvas[i + totalPuntosEnCurva][0];
-                finalTrajectory[i + totalPuntosEnCurva + numPoints][1] = arrayCurvas[i + totalPuntosEnCurva][1];
+                finalTrajectory[i + totalPointsInCurve + numPoints][0] = curvesArray[i + totalPointsInCurve][0];
+                finalTrajectory[i + totalPointsInCurve + numPoints][1] = curvesArray[i + totalPointsInCurve][1];
             }
             for (int i = 0; i < numPointsAux; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva + numPoints + totalPuntosEnCurva][0] = interpolatedPoints2[i][0];
-                finalTrajectory[i + totalPuntosEnCurva + numPoints + totalPuntosEnCurva][1] = interpolatedPoints2[i][1];
+                finalTrajectory[i + totalPointsInCurve + numPoints + totalPointsInCurve][0] = interpolatedPoints2[i][0];
+                finalTrajectory[i + totalPointsInCurve + numPoints + totalPointsInCurve][1] = interpolatedPoints2[i][1];
             }
-            for (int i = 0; i < totalPuntosEnCurva; i++)
+            for (int i = 0; i < totalPointsInCurve; i++)
             {
-                finalTrajectory[i + totalPuntosEnCurva + numPoints + totalPuntosEnCurva + numPointsAux][0] = arrayCurvas[i + totalPuntosEnCurva * 2][0];
-                finalTrajectory[i + totalPuntosEnCurva + numPoints + totalPuntosEnCurva + numPointsAux][1] = arrayCurvas[i + totalPuntosEnCurva * 2][1];
+                finalTrajectory[i + totalPointsInCurve + numPoints + totalPointsInCurve + numPointsAux][0] = curvesArray[i + totalPointsInCurve * 2][0];
+                finalTrajectory[i + totalPointsInCurve + numPoints + totalPointsInCurve + numPointsAux][1] = curvesArray[i + totalPointsInCurve * 2][1];
             }
         }
     }
     // -----------------------------------------------------------------Between-Line Movement --------------------------------------------------------------------
-    int numPointsAdded = generalOffset / distanciaEntrePuntos;       // Number of points to add at the end of the trajectory
+    int numPointsAdded = generalOffset / distanceBetweenPoints;       // Number of points to add at the end of the trajectory
     int lastPointIndex = numPointsFinal - numPointsAdded - 1;        // Index of the last point
     int penultimatePointIndex = numPointsFinal - numPointsAdded - 2; // Index of the second-to-last point
 
@@ -2048,7 +2048,7 @@ float **generateTrajectory(int squareRowInit, int squareColInit, int squareRowEn
     return finalTrajectory;
 }
 
-void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &totalCurvas, double arrayPuntosFinal[][2])
+void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &totalCurves, double finalPointsArray[][2])
 // Returns the total number of points sent.
 {
     //=======Intermediate points for knight trajectory=========
@@ -2272,45 +2272,45 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
         }
     }
     /*======================================TRAJECTORY CONDITIONS==========================================*/
-    double arrayPuntosX[totalPuntosEnCurva] = {0};
-    double arrayPuntosY[totalPuntosEnCurva] = {0};
+    double pointsArrayX[totalPointsInCurve] = {0};
+    double pointsArrayY[totalPointsInCurve] = {0};
 
     if (vectInterPointsX[4] == -1 || vectInterPointsY[4] == -1) // If there is no curve endpoint
     {
-        totalCurvas = 2;
-        bezierCurvePoints(vectInterPointsX[0], vectInterPointsY[0], vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
-        for (int i = 0; i < totalPuntosEnCurva; i++)
+        totalCurves = 2;
+        bezierCurvePoints(vectInterPointsX[0], vectInterPointsY[0], vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], pointsArrayX, pointsArrayY, totalPointsInCurve);
+        for (int i = 0; i < totalPointsInCurve; i++)
         {
-            arrayPuntosFinal[i][0] = arrayPuntosX[i];
-            arrayPuntosFinal[i][1] = arrayPuntosY[i];
+            finalPointsArray[i][0] = pointsArrayX[i];
+            finalPointsArray[i][1] = pointsArrayY[i];
         }
-        bezierCurvePoints(vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
-        for (int i = 0; i < totalPuntosEnCurva; i++)
+        bezierCurvePoints(vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], pointsArrayX, pointsArrayY, totalPointsInCurve);
+        for (int i = 0; i < totalPointsInCurve; i++)
         {
-            arrayPuntosFinal[i + totalPuntosEnCurva][0] = arrayPuntosX[i];
-            arrayPuntosFinal[i + totalPuntosEnCurva][1] = arrayPuntosY[i];
+            finalPointsArray[i + totalPointsInCurve][0] = pointsArrayX[i];
+            finalPointsArray[i + totalPointsInCurve][1] = pointsArrayY[i];
         }
     }
     else
     {
-        totalCurvas = 3;
-        bezierCurvePoints(vectInterPointsX[0], vectInterPointsY[0], vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
-        for (int i = 0; i < totalPuntosEnCurva; i++)
+        totalCurves = 3;
+        bezierCurvePoints(vectInterPointsX[0], vectInterPointsY[0], vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], pointsArrayX, pointsArrayY, totalPointsInCurve);
+        for (int i = 0; i < totalPointsInCurve; i++)
         {
-            arrayPuntosFinal[i][0] = arrayPuntosX[i];
-            arrayPuntosFinal[i][1] = arrayPuntosY[i];
+            finalPointsArray[i][0] = pointsArrayX[i];
+            finalPointsArray[i][1] = pointsArrayY[i];
         }
-        bezierCurvePoints(vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
-        for (int i = 0; i < totalPuntosEnCurva; i++)
+        bezierCurvePoints(vectInterPointsX[1], vectInterPointsY[1], vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], pointsArrayX, pointsArrayY, totalPointsInCurve);
+        for (int i = 0; i < totalPointsInCurve; i++)
         {
-            arrayPuntosFinal[i + totalPuntosEnCurva][0] = arrayPuntosX[i];
-            arrayPuntosFinal[i + totalPuntosEnCurva][1] = arrayPuntosY[i];
+            finalPointsArray[i + totalPointsInCurve][0] = pointsArrayX[i];
+            finalPointsArray[i + totalPointsInCurve][1] = pointsArrayY[i];
         }
-        bezierCurvePoints(vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], vectInterPointsX[4], vectInterPointsY[4], arrayPuntosX, arrayPuntosY, totalPuntosEnCurva);
-        for (int i = 0; i < totalPuntosEnCurva; i++)
+        bezierCurvePoints(vectInterPointsX[2], vectInterPointsY[2], vectInterPointsX[3], vectInterPointsY[3], vectInterPointsX[4], vectInterPointsY[4], pointsArrayX, pointsArrayY, totalPointsInCurve);
+        for (int i = 0; i < totalPointsInCurve; i++)
         {
-            arrayPuntosFinal[i + totalPuntosEnCurva * 2][0] = arrayPuntosX[i];
-            arrayPuntosFinal[i + totalPuntosEnCurva * 2][1] = arrayPuntosY[i];
+            finalPointsArray[i + totalPointsInCurve * 2][0] = pointsArrayX[i];
+            finalPointsArray[i + totalPointsInCurve * 2][1] = pointsArrayY[i];
         }
     }
 }
@@ -2319,13 +2319,13 @@ int movementType(int squareRowInit, int squareColInit, int squareRowEnd, int squ
 {
     if (squareRowInit - squareRowEnd == 0 || squareColInit - squareColEnd == 0 || abs(squareRowInit - squareRowEnd) == abs(squareColInit - squareColEnd)) // If the movement is in a straight line or diagonal
     {
-        // tipodeMov = 0 -> direct movement
-        // tipodeMov = 1 -> between-line movement
+        // moveType = 0 -> direct movement
+        // moveType = 1 -> between-line movement
         if (abs(squareRowInit - squareRowEnd) == abs(squareColInit - squareColEnd)) // If the movement is in a diagonal
         {
             int minX = min(squareRowInit, squareRowEnd);
             int maxX = max(squareRowInit, squareRowEnd);
-            int cuentaVacios = 0;
+            int emptyCount = 0;
             detectChessBoard(sensorMatrixSc);
             for (int x = minX + 1; x < maxX; x++) // Explore the diagonal from the initial square to the final square
             {
@@ -2355,11 +2355,11 @@ int movementType(int squareRowInit, int squareColInit, int squareRowEnd, int squ
 
                 if (sensorMatrixSc[x][y] == 1) // && matriztomovement[x][y] == '.')
                 {
-                    cuentaVacios++;
+                    emptyCount++;
                 }
             }
 
-            if (cuentaVacios == (maxX - minX) - 1)
+            if (emptyCount == (maxX - minX) - 1)
             {
                 return 0;
             }
@@ -2372,17 +2372,17 @@ int movementType(int squareRowInit, int squareColInit, int squareRowEnd, int squ
         {
             int minY = min(squareColInit, squareColEnd);
             int maxY = max(squareColInit, squareColEnd);
-            int cuentaVacios = 0;
+            int emptyCount = 0;
             int x = squareRowInit;
             for (int y = minY + 1; y < maxY; y++)
             {
 
                 if (sensorMatrixSc[x][y] == 1) // && matriztomovement[x][y] == '.')
                 {
-                    cuentaVacios++;
+                    emptyCount++;
                 }
             }
-            if (cuentaVacios == (maxY - minY) - 1)
+            if (emptyCount == (maxY - minY) - 1)
             {
                 return 0;
             }
@@ -2395,16 +2395,16 @@ int movementType(int squareRowInit, int squareColInit, int squareRowEnd, int squ
         {
             int minX = min(squareRowInit, squareRowEnd);
             int maxX = max(squareRowInit, squareRowEnd);
-            int cuentaVacios = 0;
+            int emptyCount = 0;
             int y = squareColEnd;
             for (int x = minX + 1; x < maxX; x++)
             {
                 if (sensorMatrixSc[x][y] == 1) // && matriztomovement[x][y] == '.')
                 {
-                    cuentaVacios++;
+                    emptyCount++;
                 }
             }
-            if (cuentaVacios == (maxX - minX) - 1)
+            if (emptyCount == (maxX - minX) - 1)
             {
                 return 0;
             }
@@ -2426,7 +2426,7 @@ float **interpolatePoints(float x1, float y1, float x2, float y2, int &numPoints
     float hypotenuse = std::sqrt(std::pow((x2 - x1), 2) + std::pow((y2 - y1), 2));
 
     // Round the number of points to the nearest integer
-    numPoints = static_cast<int>(hypotenuse / distanciaEntrePuntos + 0.5f);
+    numPoints = static_cast<int>(hypotenuse / distanceBetweenPoints + 0.5f);
 
     // Ensure numPoints is at least 2 to avoid division by zero
     if (numPoints < 2)
