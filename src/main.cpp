@@ -27,8 +27,8 @@ using namespace std;
 
 bool testModeSculpture = false;
 unsigned long timeMoving = 0;
-char matriz[8][8];
-bool matrizBin[10][10]; // Used globlally to store the values of the sensors
+char matrix[8][8];
+bool sensorMatrix[10][10]; // Used globlally to store the values of the sensors
 
 int mode = 1;
 int testFlag = 0;
@@ -38,23 +38,23 @@ void playMode();
 void testMode();
 void pauseMode();
 
-bool chessAnterior[10][10] = {0};
+bool previousChessState[10][10] = {0};
 int iniChangeX = 0;
 int iniChangeY = 0;
 int finChangeX = 0;
 int finChangeY = 0;
 
-int totalPiezasMuertas = 0;
-int contSensoresPiezas = 0;
-int contSensoresPiezasMuertas = 0;
-int contAnteriorPiezasMuertas = 0;
+int totalDeadPieces = 0;
+int pieceSensorCount = 0;
+int deadPieceSensorCount = 0;
+int prevDeadPiecesCount = 0;
 
 String detectChangePlus(char[10][10], int &);
 void soundEndGame();
 void stringToMatrix(String, char[10][10]);
 void automaticMechanicMovement(String, char[10][10]);
-float distanciaEuclidiana(float, float, float, float);
-void centroMasCercano(float, float, float &, float &, float &, float &);
+float euclideanDistance(float, float, float, float);
+void nearestCenter(float, float, float &, float &, float &, float &);
 
 void bleTask(void *parameter)
 {
@@ -210,28 +210,28 @@ void setup()
     Serial.println("Firmware Version: 30 09 2024");
 }
 
-float distanciaEuclidiana(float x1, float y1, float x2, float y2)
+float euclideanDistance(float x1, float y1, float x2, float y2)
 {
     return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 }
 
-void centroMasCercano(float x, float y, float &centroX, float &centroY, float &kprima, float &lprima) // Function to find the nearest square to a given x,y position
+void nearestCenter(float x, float y, float &centerX, float &centerY, float &kprima, float &lprima) // Function to find the nearest square to a given x,y position
 {
     int k = 1;
     int l = 1;
-    centroX = 9999;
-    centroY = 9999;
+    centerX = 9999;
+    centerY = 9999;
 
     for (float i = 175; i >= -175; i -= 50)
     {
         for (float j = -175; j <= 175; j += 50)
         {
-            if (distanciaEuclidiana(x, y, j, i) < distanciaEuclidiana(x, y, centroX, centroY))
+            if (euclideanDistance(x, y, j, i) < euclideanDistance(x, y, centerX, centerY))
             {
                 kprima = l;
                 lprima = k;
-                centroX = j;
-                centroY = i;
+                centerX = j;
+                centerY = i;
             }
             l++;
         }
@@ -397,25 +397,25 @@ void testMode()
     }
 
     //---------------------------------All Sensors are OFF && NO PIECES ON THE BOARD---------------------------------
-    long tiempoInicio = millis();
+    long startTime = millis();
     Serial.println("────────────────────────────────────────────────────");
     Serial.println("► Testing Sensors Stabilty when off ");
     BleChess.setState("► Sensors Stabilty when off ");
     do
     {
         sensorsOn = 0;
-        readRawSensors(matrizBin);
+        readRawSensors(sensorMatrix);
         for (int j = 0; j < 10; j++)
         {
             for (int i = 0; i < 10; i++)
             {
-                if (matrizBin[i][j] == 0)
+                if (sensorMatrix[i][j] == 0)
                 {
                     sensorsOn++;
                 }
             }
         }
-    } while (sensorsOn != 0 && millis() - tiempoInicio < 30000); //|| millis() - tiempoInicio < 15000
+    } while (sensorsOn != 0 && millis() - startTime < 30000); //|| millis() - startTime < 15000
 
     if (sensorsOn != 0)
     {
@@ -423,7 +423,7 @@ void testMode()
         {
             for (int i = 0; i < 10; i++)
             {
-                if (matrizBin[i][j] == 0)
+                if (sensorMatrix[i][j] == 0)
                 {
                     error = error + "," + i + j;
                 }
@@ -452,12 +452,12 @@ void testMode()
         unsigned long timeElectromagneting = millis();
         do
         {
-            readRawSensors(matrizBin);
+            readRawSensors(sensorMatrix);
             if (millis() - timeElectromagneting > 5000)
             {
                 errorMessage("✕ electromagnet " + String(electromagnet) + " not turn on");
             }
-        } while (matrizBin[postocheck][postocheck] == true);
+        } while (sensorMatrix[postocheck][postocheck] == true);
         Serial.println("✓ electromagnet " + String(electromagnet) + " On");
 
         // Check the other electromagnets at the same position
@@ -466,8 +466,8 @@ void testMode()
             if (i != electromagnet)
             {
                 rawMovement(postocheck, postocheck, i, posX, posY);
-                readRawSensors(matrizBin);
-                if (matrizBin[postocheck][postocheck] == false)
+                readRawSensors(sensorMatrix);
+                if (sensorMatrix[postocheck][postocheck] == false)
                 {
                     errorMessage("✕ electromagnet " + String(i) + " is on when main electromagnet " + String(electromagnet) + " is on");
                 }
@@ -490,7 +490,7 @@ void testMode()
     int checadas = 0;
     int sensorsOn2 = 0;
     int timesBouncing = 0;
-    bool matrizBinAux[10][10] = {0};
+    bool sensorMatrixAux[10][10] = {0};
     int electromagnet = 1;
     int previousElectromagnet = 0;
     for (int j = 0; j <= 9; j++)
@@ -527,25 +527,25 @@ void testMode()
                 rawMovement(i, j, electromagnet, posX, posY);
 
                 // Sensors bouncing
-                readRawSensors(matrizBin);
+                readRawSensors(sensorMatrix);
                 for (int i = 0; i < 10; i++)
                 {
                     for (int j = 0; j < 10; j++)
                     {
-                        matrizBinAux[i][j] = matrizBin[i][j];
+                        sensorMatrixAux[i][j] = sensorMatrix[i][j];
                     }
                 }
                 long timeBouncing = millis();
                 while (millis() - timeBouncing < 50)
                 {
-                    readRawSensors(matrizBin);
+                    readRawSensors(sensorMatrix);
                     for (int i = 0; i < 10; i++)
                     {
                         for (int j = 0; j < 10; j++)
                         {
-                            if (matrizBin[i][j] != matrizBinAux[i][j])
+                            if (sensorMatrix[i][j] != sensorMatrixAux[i][j])
                             {
-                                matrizBinAux[i][j] = matrizBin[i][j];
+                                sensorMatrixAux[i][j] = sensorMatrix[i][j];
                                 timesBouncing++;
                             }
                         }
@@ -563,7 +563,7 @@ void testMode()
                 // Sensors bouncing
 
                 // Specific Sensor Check
-                if (matrizBin[i][j] == false)
+                if (sensorMatrix[i][j] == false)
                 {
                     Serial.println("✓ Sensor " + String(i) + String(j) + " is on");
                 }
@@ -578,7 +578,7 @@ void testMode()
                 {
                     for (int l = 0; l <= 9; l++)
                     {
-                        if (matrizBin[l][k] == false && (k != j || l != i))
+                        if (sensorMatrix[l][k] == false && (k != j || l != i))
                         {
                             sensorsOn2++;
                             error = error + ", " + l + k;
@@ -599,7 +599,7 @@ void testMode()
                     {
                         for (int l = 0; l <= 9; l++)
                         {
-                            Serial.print(matrizBin[l][k]);
+                            Serial.print(sensorMatrix[l][k]);
                             Serial.print(" ");
                         }
                         Serial.println("");
@@ -618,7 +618,7 @@ void testMode()
                             {
                                 for (int l = 0; l <= 9; l++)
                                 {
-                                    Serial.print(matrizBin[l][k]);
+                                    Serial.print(sensorMatrix[l][k]);
                                     Serial.print(" ");
                                 }
                                 Serial.println("");
@@ -663,25 +663,25 @@ void testMode()
                 rawMovement(i, j, electromagnet, posX, posY);
 
                 // Sensors bouncing
-                readRawSensors(matrizBin);
+                readRawSensors(sensorMatrix);
                 for (int i = 0; i < 10; i++)
                 {
                     for (int j = 0; j < 10; j++)
                     {
-                        matrizBinAux[i][j] = matrizBin[i][j];
+                        sensorMatrixAux[i][j] = sensorMatrix[i][j];
                     }
                 }
                 long timeBouncing = millis();
                 while (millis() - timeBouncing < 50)
                 {
-                    readRawSensors(matrizBin);
+                    readRawSensors(sensorMatrix);
                     for (int i = 0; i < 10; i++)
                     {
                         for (int j = 0; j < 10; j++)
                         {
-                            if (matrizBin[i][j] != matrizBinAux[i][j])
+                            if (sensorMatrix[i][j] != sensorMatrixAux[i][j])
                             {
-                                matrizBinAux[i][j] = matrizBin[i][j];
+                                sensorMatrixAux[i][j] = sensorMatrix[i][j];
                                 timesBouncing++;
                             }
                         }
@@ -699,7 +699,7 @@ void testMode()
                 // Sensors bouncing
 
                 // Specific Sensor Check
-                if (matrizBin[i][j] == false)
+                if (sensorMatrix[i][j] == false)
                 {
                     Serial.println("✓ Sensor " + String(i) + String(j) + " is on");
                 }
@@ -714,7 +714,7 @@ void testMode()
                 {
                     for (int l = 0; l <= 9; l++)
                     {
-                        if (matrizBin[l][k] == false && (k != j || l != i))
+                        if (sensorMatrix[l][k] == false && (k != j || l != i))
                         {
                             sensorsOn2++;
                             error = error + ", " + l + k;
@@ -735,7 +735,7 @@ void testMode()
                     {
                         for (int l = 0; l <= 9; l++)
                         {
-                            Serial.print(matrizBin[l][k]);
+                            Serial.print(sensorMatrix[l][k]);
                             Serial.print(" ");
                         }
                         Serial.println("");
@@ -754,7 +754,7 @@ void testMode()
                             {
                                 for (int l = 0; l <= 9; l++)
                                 {
-                                    Serial.print(matrizBin[l][k]);
+                                    Serial.print(sensorMatrix[l][k]);
                                     Serial.print(" ");
                                 }
                                 Serial.println("");
@@ -949,13 +949,13 @@ private:
         bleManager.resetVerifNewCommandBluetooth();
 
         compareMatrixVsSensorsPlus(-1, state.matrix);
-        detectChessBoard(matrizBin);
-        bleManager.sendMatrixToApp("CLEAN: Match.", matrizBin, state.matrix);
+        detectChessBoard(sensorMatrix);
+        bleManager.sendMatrixToApp("CLEAN: Match.", sensorMatrix, state.matrix);
         bleManager.setState("Playing");
 
         for (int j = 0; j < 10; j++)
             for (int i = 0; i < 10; i++)
-                chessAnterior[i][j] = matrizBin[i][j];
+                previousChessState[i][j] = sensorMatrix[i][j];
     }
 
     bool verifyMovement(const String &move)
@@ -1394,7 +1394,7 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
     if (array[4] == 'x') // Capture
     {
         movementChess = '1';
-        contAnteriorPiezasMuertas++;
+        prevDeadPiecesCount++;
     }
     if (piezaChess == 'K' || piezaChess == 'k')
     {
@@ -1426,24 +1426,24 @@ void automaticMechanicMovement(String movementString, char matrixToAutomaticMove
     Serial.println("Movimiento: " + String(movementChess));
     //-------------------------------------Find Move
     Serial.println("Movimiento automatico, Initial Matrix: ");
-    printMatrizGenerica(matrixToAutomaticMove, 10, 10);
+    printGenericMatrix(matrixToAutomaticMove, 10, 10);
 
-    String fullMoves = decodificaMovimiento(x_iniChar, y_iniChar, x_finChar, y_finChar, movementChess, colorTurn, matrixToAutomaticMove, true);
+    String fullMoves = decodeMovement(x_iniChar, y_iniChar, x_finChar, y_finChar, movementChess, colorTurn, matrixToAutomaticMove, true);
     Serial.println("Movimiento FULL: " + fullMoves);
 
     // take back movement without single move
-    movimientoSimplificado(fullMoves[0] - '0', fullMoves[1] - '0', fullMoves[2] - '0', fullMoves[3] - '0', matrixToAutomaticMove);
+    simplifiedMovement(fullMoves[0] - '0', fullMoves[1] - '0', fullMoves[2] - '0', fullMoves[3] - '0', matrixToAutomaticMove);
     Serial.println("Movimiento Simple: ");
-    printMatrizGenerica(matrixToAutomaticMove, 10, 10);
+    printGenericMatrix(matrixToAutomaticMove, 10, 10);
     if (fullMoves[4] != '/')
     {
 
-        movimientoSimplificado(fullMoves[4] - '0', fullMoves[5] - '0', fullMoves[6] - '0', fullMoves[7] - '0', matrixToAutomaticMove);
+        simplifiedMovement(fullMoves[4] - '0', fullMoves[5] - '0', fullMoves[6] - '0', fullMoves[7] - '0', matrixToAutomaticMove);
         Serial.println("Movimiento Comer: ");
-        printMatrizGenerica(matrixToAutomaticMove, 10, 10);
+        printGenericMatrix(matrixToAutomaticMove, 10, 10);
     }
 
-    BleChess.sendMatrixToApp("CLEAN: Match.", matrizBin, matrixToAutomaticMove);
+    BleChess.sendMatrixToApp("CLEAN: Match.", sensorMatrix, matrixToAutomaticMove);
 }
 
 String detectChangePlus(char currentMatrix[10][10], int &specialMove)
@@ -1492,14 +1492,14 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
         }
         //------------Bluetooth Manager------------------
 
-        detectChessBoard(matrizBin);
+        detectChessBoard(sensorMatrix);
 
         countPieces = 0;
         for (int j = 0; j < 10; j++)
         {
             for (int i = 0; i < 10; i++)
             {
-                if (matrizBin[i][j] == 0)
+                if (sensorMatrix[i][j] == 0)
                 {
                     countPieces++;
                 }
@@ -1519,7 +1519,7 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
 
                     soundHandler(6);
                     Serial.print("More than 5 sec without piece");
-                    BleChess.sendMatrixToApp("ERROR: Chessboard and sensor matrix do not match.", matrizBin, currentMatrix);
+                    BleChess.sendMatrixToApp("ERROR: Chessboard and sensor matrix do not match.", sensorMatrix, currentMatrix);
 
                     lastSoundTime = millis(); // Update the last sound time
                 }
@@ -1535,7 +1535,7 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
         {
             for (int i = 0; i < 10; i++)
             {
-                if (chessAnterior[i][j] != matrizBin[i][j])
+                if (previousChessState[i][j] != sensorMatrix[i][j])
                 {
                     matrixChanged = true;
                     // Serial.print("Changed: ");
@@ -1557,9 +1557,9 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
                 {
                     for (int i = 0; i < 10; i++)
                     {
-                        if (chessAnterior[i][j] != matrizBin[i][j])
+                        if (previousChessState[i][j] != sensorMatrix[i][j])
                         {
-                            if (matrizBin[i][j] == false) // Piece placed
+                            if (sensorMatrix[i][j] == false) // Piece placed
                             {
                                 lastTimeFunctionRan = millis();
                                 lastSoundTime = millis();
@@ -1574,7 +1574,7 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
                                     soundHandler(5);
                                 }
                             }
-                            if (matrizBin[i][j] == true) // Piece taken
+                            if (sensorMatrix[i][j] == true) // Piece taken
                             {
                                 lastTimeFunctionRan = millis();
                                 lastSoundTime = millis();
@@ -1591,7 +1591,7 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
                 {
                     for (int ii = 0; ii < 10; ii++)
                     {
-                        chessAnterior[ii][jj] = matrizBin[ii][jj];
+                        previousChessState[ii][jj] = sensorMatrix[ii][jj];
                     }
                 }
                 if (countPieces == 32)
@@ -1608,7 +1608,7 @@ String detectChangePlus(char currentMatrix[10][10], int &specialMove)
             break;
         }
     }
-    BleChess.sendMatrixToApp("CLEAN: Match.", matrizBin, currentMatrix);
+    BleChess.sendMatrixToApp("CLEAN: Match.", sensorMatrix, currentMatrix);
     if (vectorFinChangeX.size() != 0 || vectorIniChangeX.size() != 0)
     {
         if (vectorFinChangeX.size() == vectorIniChangeX.size())

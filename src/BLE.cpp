@@ -1379,19 +1379,19 @@ void Bluetooth::setStatus(String status)
     Serial.println("Physical move to App: " + status);
 }
 
-void Bluetooth::sendMatrixToApp(String error, bool sensores[10][10], char matrixToSend[10][10])
+void Bluetooth::sendMatrixToApp(String error, bool sensors[10][10], char matrixToSend[10][10])
 {
-    String strSensores = "";
+    String strSensors = "";
     String strMatriz = "";
     for (int i = 0; i < 10; i++)
     {
         for (int j = 0; j < 10; j++)
         {
-            strSensores += sensores[i][j];
+            strSensors += sensors[i][j];
             strMatriz += matrixToSend[i][j];
         }
     }
-    generalCharacteristic_send_matrix->setValue(error + "," + strMatriz + "," + strSensores); // Updated for the NimBLE library
+    generalCharacteristic_send_matrix->setValue(error + "," + strMatriz + "," + strSensors); // Updated for the NimBLE library
     generalCharacteristic_send_matrix->notify();
 }
 
@@ -1780,14 +1780,14 @@ int Bluetooth::batteryCheck(int mode)
             delay(tiempoMuxes);
 
             timer = millis();
-            int contador = 0;
+            int counter = 0;
             while (millis() - timer < 250)
             {
                 analogValueVBAT = analogValueVBAT + analogRead(4);
-                contador++;
+                counter++;
             }
 
-            analogValueVBAT = analogValueVBAT / contador;
+            analogValueVBAT = analogValueVBAT / counter;
             Serial.printf("=================================RAW VBAT: %d \n", analogValueVBAT);
             return analogValueVBAT;
         }
