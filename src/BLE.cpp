@@ -669,7 +669,7 @@ class generalCallbacks_check_move : public BLECharacteristicCallbacks
         String dataBLE = "error=  -1";
         generalCharacteristic_errorMsg->setValue(dataBLE);
         generalCharacteristic_errorMsg->notify();
-        Serial.print("Resultado de Check Move: ");
+        Serial.print("Check Move Result: ");
         Serial.println(bluetoothCheckMov);
         globalCheckMovement = bluetoothCheckMov;
     }
@@ -1070,7 +1070,7 @@ void Bluetooth::init()
         }
         if (batteryInit == 4095) // Read error
         {
-            Serial.println("Error de Lectura Bateria");
+            Serial.println("Battery Read Error");
             batteryInit = (doneCharging) ? maxBattery : 2895;
         }
         if (wallStatus)
