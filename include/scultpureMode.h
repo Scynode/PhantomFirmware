@@ -55,4 +55,4 @@ String decodeChessMove(char movChess[7], int moveCount);
 void soundHandler(int);
 //int batteryCheck(int mode);
 
-void initMatrizPlus(char matrixToInit[10][10]);
+void initMatrixPlus(char matrixToInit[10][10]);

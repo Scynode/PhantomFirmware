@@ -251,7 +251,7 @@ void sculptureMain()
     int cuentapatternsToHome = 0;
     char sculpturePlusMatrix[10][10];
     //---------------------------------------- TURN ON ROUTINE ----------------------------------------//
-    initMatrizPlus(sculpturePlusMatrix);
+    initMatrixPlus(sculpturePlusMatrix);
     BleChess.setMode(1);
     if (testModeSculpture == false) // Normal mode
     {
@@ -453,7 +453,7 @@ void centerInitialPiecesSc(int mode, char matrixToCenter[10][10])
     Serial.println("-----------------------------------CENTRADO");
     if (mode == 0)
     {
-        initMatrizPlus(matrixToCenter);
+        initMatrixPlus(matrixToCenter);
     }
 
     detectChessBoard(sensorsMatrix);
@@ -844,10 +844,10 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
 
     /* ======================SETUP===================== */
     static String newMode = "1";
-    int piezasOutofPos = 0;
+    int piecesOutOfPos = 0;
     int cyclesUntilExit = 0;
     int difSensMatrix = 0;
-    bool matrizPlusSensors[10][10];
+    bool matrixPlusSensors[10][10];
     bool sensorMatrixScAux[10][10];
     /* ======================SETUP===================== */
 
@@ -856,7 +856,7 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
     {
         for (int i = 0; i < 10; i++) // row
         {
-            matrizPlusSensors[i][j] = matrixToCompare[i][j] == '.';
+            matrixPlusSensors[i][j] = matrixToCompare[i][j] == '.';
         }
     }
 
@@ -866,7 +866,7 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
 
         do // Until sensors match the virtual matrix
         {
-            piezasOutofPos = 0;
+            piecesOutOfPos = 0;
             cyclesUntilExit++;
             detectChessBoard(sensorMatrixSc); // Updates as many times as needed until done.
 
@@ -875,7 +875,7 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
             {
                 for (int i = 0; i < 10; i++) // row
                 {
-                    piezasOutofPos += (matrizPlusSensors[i][j] != sensorMatrixSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
+                    piecesOutOfPos += (matrixPlusSensors[i][j] != sensorMatrixSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
                     difSensMatrix += (sensorMatrixScAux[i][j] != sensorMatrixSc[i][j]);     // increment the counter of piece movements if the current sensor matrix differs from the previous one
                     sensorMatrixScAux[i][j] = sensorMatrixSc[i][j];                         // update previous sensor matrix
                 }
@@ -884,7 +884,7 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
             if ((cyclesUntilExit == 1 || cyclesUntilExit == 2 || cyclesUntilExit == 3 || difSensMatrix > 0 || millis() - startTime >= 10000) && (mode & COMPARE_IMPRIME))
             {
                 Serial.println();
-                if (piezasOutofPos == 0)
+                if (piecesOutOfPos == 0)
                 {
                     Serial.println("Chessboard and sensor matrix match.");
                 }
@@ -928,13 +928,13 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
                 startTime = millis(); // Reset the counter
             }
             newMode = BleChess.getModeChess();
-        } while (piezasOutofPos > 0 && (mode & COMPARE_IMPRIME) && newMode.toInt() == 1); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
+        } while (piecesOutOfPos > 0 && (mode & COMPARE_IMPRIME) && newMode.toInt() == 1); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
     }
     else
     {
         do // Until sensors match the virtual matrix
         {
-            piezasOutofPos = 0;
+            piecesOutOfPos = 0;
             cyclesUntilExit++;
             detectChessBoard(sensorMatrixSc); // Updates as many times as needed until done.
             /* ======================CHECK IF ANY PIECE IS MISPLACED OR IF THE MATRIX CHANGED===================== */
@@ -942,18 +942,18 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
             {
                 for (int i = 0; i < 10; i++) // row
                 {
-                    piezasOutofPos += (matrizPlusSensors[i][j] != sensorMatrixSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
+                    piecesOutOfPos += (matrixPlusSensors[i][j] != sensorMatrixSc[i][j]); // increment the counter of out-of-position pieces if the virtual and sensor matrices do not match
                     difSensMatrix += (sensorMatrixScAux[i][j] != sensorMatrixSc[i][j]);     // increment the counter of piece movements if the current sensor matrix differs from the previous one
                     sensorMatrixScAux[i][j] = sensorMatrixSc[i][j];                         // update previous sensor matrix
                 }
             }
             /* ======================CHECK IF ANY PIECE IS MISPLACED OR IF THE MATRIX CHANGED===================== */
 
-            if (piezasOutofPos == 0)
+            if (piecesOutOfPos == 0)
             {
                 Serial.println("Chessboard and sensor matrix match.");
             }
-            else if (piezasOutofPos > 0)
+            else if (piecesOutOfPos > 0)
             {
                 // PLAY SOUND EVERY 5 SECONDS, BUT SEND ERROR ONLY WHEN THE MATRIX CHANGES
                 if (millis() - startTime >= 5000 || cyclesUntilExit == 1)
@@ -977,13 +977,13 @@ int compareMatrixVsSensorsPlus(int mode, char matrixToCompare[10][10])
                 break;
             }
             // when corrected, play the success sound
-            if (cyclesUntilExit > 1 && piezasOutofPos == 0)
+            if (cyclesUntilExit > 1 && piecesOutOfPos == 0)
             {
                 soundHandler(5);
             }
-        } while (piezasOutofPos > 0 && newMode.toInt() == 2 && globalConnect == "1"); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
+        } while (piecesOutOfPos > 0 && newMode.toInt() == 2 && globalConnect == "1"); // If pieces are out of position, stay in the loop until they are fixed or the game mode changes.
     }
-    return piezasOutofPos;
+    return piecesOutOfPos;
 }
 
 void simplifiedMovement(int squareRowInit, int squareColInit, int squareRowEnd, int squareColEnd, char matrixToMove[10][10])
@@ -2760,7 +2760,7 @@ String readFromFileSc(int gameToPlay)
 
     String fullMoves = "";
 
-    initMatrizPlus(matrixToSimulateGame);
+    initMatrixPlus(matrixToSimulateGame);
     // Serial.print("Initial Matrix: ");
     // printGenericMatrix(matrixToSimulateGame, 10, 10);
     indexA = 0;
@@ -3177,29 +3177,29 @@ void sensorOffsetCalib()
 //===============================================================SENSING=======================================================
 
 //==========================================================MATRIX OPERATIONS=====================================================
-void printGenericMatrix(char matrix[rows][cols], int rows, int cols)
+void printGenericMatrix(char matrix[rows][cols], int numRows, int numCols)
 {
 
     char vectNumeros[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-    char matrixAux[rows + 1][cols + 1];
+    char matrixAux[numRows + 1][numCols + 1];
 
     // Fill matrixAux with the original matrix shifted by one
-    for (int j = 1; j < rows + 1; j++)
+    for (int j = 1; j < numRows + 1; j++)
     {
-        for (int i = 1; i < cols + 1; i++)
+        for (int i = 1; i < numCols + 1; i++)
         {
             matrixAux[i][j] = matrix[i - 1][j - 1];
         }
     }
 
     // Add numbers to the top row
-    for (int i = 1; i < cols + 1; i++)
+    for (int i = 1; i < numCols + 1; i++)
     {
         matrixAux[i][0] = vectNumeros[i - 1];
     }
 
     // Add numbers to the left column
-    for (int j = 1; j < rows + 1; j++)
+    for (int j = 1; j < numRows + 1; j++)
     {
         matrixAux[0][j] = vectNumeros[j - 1];
     }
@@ -3207,10 +3207,10 @@ void printGenericMatrix(char matrix[rows][cols], int rows, int cols)
     // Space at the top-left corner
     matrixAux[0][0] = ' ';
 
-    // Imprimir matrixAux
-    for (int j = 0; j < rows + 1; j++)
+    // Print matrixAux
+    for (int j = 0; j < numRows + 1; j++)
     {
-        for (int i = 0; i < cols + 1; i++)
+        for (int i = 0; i < numCols + 1; i++)
         {
             Serial.print(matrixAux[i][j]);
             Serial.print(" ");
@@ -3219,7 +3219,7 @@ void printGenericMatrix(char matrix[rows][cols], int rows, int cols)
     }
 }
 
-void initMatrizPlus(char matrixToInit[10][10])
+void initMatrixPlus(char matrixToInit[10][10])
 {
     for (int i = 0; i < 10; i++)
     {

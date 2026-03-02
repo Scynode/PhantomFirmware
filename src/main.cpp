@@ -893,7 +893,7 @@ private:
     bool initializeGame()
     {
         // Initialize matrix and get initial game state
-        initMatrizPlus(state.matrix);
+        initMatrixPlus(state.matrix);
 
         // Wait for valid matrix
         String matrixGame = waitForValidMatrix();
