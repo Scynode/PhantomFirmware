@@ -1227,10 +1227,10 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
     //---------------------------------------Mechanism Tranform----------------------------------------
 
     //===============================================ELECTROMAGNET SELECTION BY PATH=======================================================
-    int magnetCount[5] = {0};
-    bool magnetActiveAtInit[5] = {false};
-    bool magnetActiveAtEnd[5] = {false};
-    int activeMagnets[5] = {0};
+    int electromagnetCount[5] = {0};
+    bool electromagnetActiveAtInit[5] = {false};
+    bool electromagnetActiveAtEnd[5] = {false};
+    int activeElectromagnets[5] = {0};
     int activeElectroCount = 0;
     // Define conditions for each electromagnet [left, top, bottom, right]
     int conditions[5][4] = {
@@ -1248,20 +1248,20 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
             if (finalTrajectory[i][0] >= conditions[j][0] && finalTrajectory[i][1] <= conditions[j][1] &&
                 finalTrajectory[i][1] >= conditions[j][2] && finalTrajectory[i][0] <= conditions[j][3])
             {
-                magnetCount[j]++;
+                electromagnetCount[j]++;
                 if (i == 0)
-                    magnetActiveAtInit[j] = true;
+                    electromagnetActiveAtInit[j] = true;
                 if (i == numPointsFinal - 1)
-                    magnetActiveAtEnd[j] = true;
+                    electromagnetActiveAtEnd[j] = true;
             }
         }
     }
 
     for (int i = 1; i <= 4; i++) // If an electromagnet can travel the entire trajectory, add it to the active electromagnets array
     {
-        if (magnetCount[i] == numPointsFinal)
+        if (electromagnetCount[i] == numPointsFinal)
         {
-            activeMagnets[activeElectroCount++] = i;
+            activeElectromagnets[activeElectroCount++] = i;
         }
     }
     //===============================================ELECTROMAGNET SELECTION BY PATH=======================================================
@@ -1291,9 +1291,9 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the start point
         {
-            if (magnetCount[i] < minDistance && magnetActiveAtInit[i] == true)
+            if (electromagnetCount[i] < minDistance && electromagnetActiveAtInit[i] == true)
             {
-                minDistance = magnetCount[i];
+                minDistance = electromagnetCount[i];
                 activeElectroInit = i;
             }
         }
@@ -1301,22 +1301,22 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         minDistance = std::numeric_limits<double>::max();
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the end point
         {
-            if (magnetCount[i] < minDistance && magnetActiveAtEnd[i] == true)
+            if (electromagnetCount[i] < minDistance && electromagnetActiveAtEnd[i] == true)
             {
-                minDistance = magnetCount[i];
+                minDistance = electromagnetCount[i];
                 activeElectroEnd = i;
             }
         }
 
         calculateOffsets(activeElectroInit, electroOffsetX, electroOffsetY);
-        for (int i = 0; i < (numPointsFinal - magnetCount[activeElectroEnd]); i++) // Apply offset to all points in trajectory 1 and inverse kinematics
+        for (int i = 0; i < (numPointsFinal - electromagnetCount[activeElectroEnd]); i++) // Apply offset to all points in trajectory 1 and inverse kinematics
         {
             finalTrajectory[i][0] = finalTrajectory[i][0] + electroOffsetX;
             finalTrajectory[i][1] = finalTrajectory[i][1] + electroOffsetY;
         }
 
         calculateOffsets(activeElectroEnd, electroOffsetX, electroOffsetY);
-        for (int i = (numPointsFinal - magnetCount[activeElectroEnd]); i < (numPointsFinal); i++) // Apply offset to all points in trajectory 2 and inverse kinematics
+        for (int i = (numPointsFinal - electromagnetCount[activeElectroEnd]); i < (numPointsFinal); i++) // Apply offset to all points in trajectory 2 and inverse kinematics
         {
             finalTrajectory[i][0] = finalTrajectory[i][0] + electroOffsetX;
             finalTrajectory[i][1] = finalTrajectory[i][1] + electroOffsetY;
@@ -1332,7 +1332,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         {
             double deltaX, deltaY, distance;
 
-            calculateOffsets(activeMagnets[i], electroOffsetX, electroOffsetY);
+            calculateOffsets(activeElectromagnets[i], electroOffsetX, electroOffsetY);
             deltaX = (finalTrajectory[0][0] + electroOffsetX) - currentXposition;
             deltaY = (finalTrajectory[0][1] + electroOffsetY) - currentYposition;
             distance = sqrt(deltaX * deltaX + deltaY * deltaY); // Calculate the distance between the start point and the electromagnet
@@ -1340,7 +1340,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
             if (distance < minDistance) // If the distance is less than the minimum distance, update the active electromagnet
             {
                 minDistance = distance;
-                activeElectro = activeMagnets[i];
+                activeElectro = activeElectromagnets[i];
             }
         }
 
@@ -1553,11 +1553,11 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         if (activeElectroCount == 0) // Mechanism is making a complex movement with a different electromagnet for each segment
         {
-            if (i == (numPointsFinal - magnetCount[activeElectroEnd])) // Deactivates activeElectroInit
+            if (i == (numPointsFinal - electromagnetCount[activeElectroEnd])) // Deactivates activeElectroInit
             {
                 deactivateAllMagnets();
             }
-            else if (i == (numPointsFinal - magnetCount[activeElectroEnd]) + 1) // Activates activeElectroEnd in the following cycle.
+            else if (i == (numPointsFinal - electromagnetCount[activeElectroEnd]) + 1) // Activates activeElectroEnd in the following cycle.
             {
                 activateElectromagnetV2(activeElectroEnd, 35);
             }
