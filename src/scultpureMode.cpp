@@ -1228,8 +1228,8 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
     //===============================================ELECTROMAGNET SELECTION BY PATH=======================================================
     int electromagnetCount[5] = {0};
-    bool electromagnetActiveAtInit[5] = {false};
-    bool electromagnetActiveAtEnd[5] = {false};
+    bool electromagnetInit[5] = {false};
+    bool electromagnetEnd[5] = {false};
     int activeElectromagnets[5] = {0};
     int activeElectroCount = 0;
     // Define conditions for each electromagnet [left, top, bottom, right]
@@ -1250,9 +1250,9 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
             {
                 electromagnetCount[j]++;
                 if (i == 0)
-                    electromagnetActiveAtInit[j] = true;
+                    electromagnetInit[j] = true;
                 if (i == numPointsFinal - 1)
-                    electromagnetActiveAtEnd[j] = true;
+                    electromagnetEnd[j] = true;
             }
         }
     }
@@ -1291,7 +1291,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the start point
         {
-            if (electromagnetCount[i] < minDistance && electromagnetActiveAtInit[i] == true)
+            if (electromagnetCount[i] < minDistance && electromagnetInit[i] == true)
             {
                 minDistance = electromagnetCount[i];
                 activeElectroInit = i;
@@ -1301,7 +1301,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         minDistance = std::numeric_limits<double>::max();
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the end point
         {
-            if (electromagnetCount[i] < minDistance && electromagnetActiveAtEnd[i] == true)
+            if (electromagnetCount[i] < minDistance && electromagnetEnd[i] == true)
             {
                 minDistance = electromagnetCount[i];
                 activeElectroEnd = i;
