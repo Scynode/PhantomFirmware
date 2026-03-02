@@ -42,7 +42,7 @@ String batteryStatustoApp = "-";
 //--------------------------------------------------
 
 int MAX_CHARACTERS_BTNAME = 20;
-String actualBluetoothMessage = "";
+String currentBluetoothMessage = "";
 String newBluetoothMessage = "";
 String globalCheckMovement = "0";
 String globalPlayInfo = "";
@@ -1354,10 +1354,10 @@ void Bluetooth::init()
 String Bluetooth::verifNewCommandBluetooth()
 {
     String resultMessage = "";
-    if (actualBluetoothMessage != newBluetoothMessage)
+    if (currentBluetoothMessage != newBluetoothMessage)
     {
         resultMessage = newBluetoothMessage;
-        actualBluetoothMessage = newBluetoothMessage;
+        currentBluetoothMessage = newBluetoothMessage;
     }
     else
     {
@@ -1368,7 +1368,7 @@ String Bluetooth::verifNewCommandBluetooth()
 
 void Bluetooth::resetVerifNewCommandBluetooth()
 {
-    actualBluetoothMessage = "";
+    currentBluetoothMessage = "";
     newBluetoothMessage = "";
 }
 
@@ -1745,14 +1745,14 @@ int Bluetooth::batteryCheck(int mode)
 {
     int analogValueVBAT = 0;
     int digitalcharge = 0;
-    int tiempoMuxes = 5;
+    int muxDelay = 5;
 
     if (mode == 0) // ONLY ANALOGS
     {
         digitalWrite(batS2, LOW);
         digitalWrite(batS1, LOW);
         digitalWrite(batS0, HIGH);
-        delay(tiempoMuxes);
+        delay(muxDelay);
 
         unsigned long timer = millis();
         int previousDigitalCharge = analogRead(4);
@@ -1777,7 +1777,7 @@ int Bluetooth::batteryCheck(int mode)
             digitalWrite(batS2, LOW);
             digitalWrite(batS1, HIGH);
             digitalWrite(batS0, HIGH);
-            delay(tiempoMuxes);
+            delay(muxDelay);
 
             timer = millis();
             int counter = 0;

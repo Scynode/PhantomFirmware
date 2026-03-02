@@ -1227,13 +1227,13 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
     //---------------------------------------Mechanism Tranform----------------------------------------
 
     //===============================================ELECTROMAGNET SELECTION BY PATH=======================================================
-    int electroimanes[5] = {0};
-    bool electroimanesInit[5] = {false};
-    bool electroimanesEnd[5] = {false};
-    int electroimanesActivos[5] = {0};
+    int magnetCount[5] = {0};
+    bool magnetActiveAtInit[5] = {false};
+    bool magnetActiveAtEnd[5] = {false};
+    int activeMagnets[5] = {0};
     int activeElectroCount = 0;
     // Define conditions for each electromagnet [left, top, bottom, right]
-    int condiciones[5][4] = {
+    int conditions[5][4] = {
         {},                     // Position 0 is not used, so indices match electromagnet numbers
         {-225, 197, -192, 182}, // Electromagnet 1
         {-214, 234, -152, 192}, // Electromagnet 2
@@ -1245,23 +1245,23 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
     {
         for (int j = 1; j <= 4; j++) // iterate over conditions for each electromagnet
         {
-            if (finalTrajectory[i][0] >= condiciones[j][0] && finalTrajectory[i][1] <= condiciones[j][1] &&
-                finalTrajectory[i][1] >= condiciones[j][2] && finalTrajectory[i][0] <= condiciones[j][3])
+            if (finalTrajectory[i][0] >= conditions[j][0] && finalTrajectory[i][1] <= conditions[j][1] &&
+                finalTrajectory[i][1] >= conditions[j][2] && finalTrajectory[i][0] <= conditions[j][3])
             {
-                electroimanes[j]++;
+                magnetCount[j]++;
                 if (i == 0)
-                    electroimanesInit[j] = true;
+                    magnetActiveAtInit[j] = true;
                 if (i == numPointsFinal - 1)
-                    electroimanesEnd[j] = true;
+                    magnetActiveAtEnd[j] = true;
             }
         }
     }
 
     for (int i = 1; i <= 4; i++) // If an electromagnet can travel the entire trajectory, add it to the active electromagnets array
     {
-        if (electroimanes[i] == numPointsFinal)
+        if (magnetCount[i] == numPointsFinal)
         {
-            electroimanesActivos[activeElectroCount++] = i;
+            activeMagnets[activeElectroCount++] = i;
         }
     }
     //===============================================ELECTROMAGNET SELECTION BY PATH=======================================================
@@ -1291,9 +1291,9 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the start point
         {
-            if (electroimanes[i] < minDistance && electroimanesInit[i] == true)
+            if (magnetCount[i] < minDistance && magnetActiveAtInit[i] == true)
             {
-                minDistance = electroimanes[i];
+                minDistance = magnetCount[i];
                 activeElectroInit = i;
             }
         }
@@ -1301,22 +1301,22 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         minDistance = std::numeric_limits<double>::max();
         for (int i = 1; i <= 4; i++) // Find the electromagnet closest to the end point
         {
-            if (electroimanes[i] < minDistance && electroimanesEnd[i] == true)
+            if (magnetCount[i] < minDistance && magnetActiveAtEnd[i] == true)
             {
-                minDistance = electroimanes[i];
+                minDistance = magnetCount[i];
                 activeElectroEnd = i;
             }
         }
 
         calculateOffsets(activeElectroInit, electroOffsetX, electroOffsetY);
-        for (int i = 0; i < (numPointsFinal - electroimanes[activeElectroEnd]); i++) // Apply offset to all points in trajectory 1 and inverse kinematics
+        for (int i = 0; i < (numPointsFinal - magnetCount[activeElectroEnd]); i++) // Apply offset to all points in trajectory 1 and inverse kinematics
         {
             finalTrajectory[i][0] = finalTrajectory[i][0] + electroOffsetX;
             finalTrajectory[i][1] = finalTrajectory[i][1] + electroOffsetY;
         }
 
         calculateOffsets(activeElectroEnd, electroOffsetX, electroOffsetY);
-        for (int i = (numPointsFinal - electroimanes[activeElectroEnd]); i < (numPointsFinal); i++) // Apply offset to all points in trajectory 2 and inverse kinematics
+        for (int i = (numPointsFinal - magnetCount[activeElectroEnd]); i < (numPointsFinal); i++) // Apply offset to all points in trajectory 2 and inverse kinematics
         {
             finalTrajectory[i][0] = finalTrajectory[i][0] + electroOffsetX;
             finalTrajectory[i][1] = finalTrajectory[i][1] + electroOffsetY;
@@ -1332,7 +1332,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         {
             double deltaX, deltaY, distance;
 
-            calculateOffsets(electroimanesActivos[i], electroOffsetX, electroOffsetY);
+            calculateOffsets(activeMagnets[i], electroOffsetX, electroOffsetY);
             deltaX = (finalTrajectory[0][0] + electroOffsetX) - currentXposition;
             deltaY = (finalTrajectory[0][1] + electroOffsetY) - currentYposition;
             distance = sqrt(deltaX * deltaX + deltaY * deltaY); // Calculate the distance between the start point and the electromagnet
@@ -1340,7 +1340,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
             if (distance < minDistance) // If the distance is less than the minimum distance, update the active electromagnet
             {
                 minDistance = distance;
-                activeElectro = electroimanesActivos[i];
+                activeElectro = activeMagnets[i];
             }
         }
 
@@ -1370,9 +1370,9 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
     //=======================================================INVERSE KINEMATICS=======================================================
 
     //=====================================================SPEED AND ACCELERATION=========================================================
-    float umbralInferior = 0.52;                    // Approximately 30 degrees in radians
-    float umbralSuperior = 2 * PI - umbralInferior; // Approximately 330 degrees in radians
-    std::vector<int> puntosCambioDireccion;
+    float lowerThreshold = 0.52;                    // Approximately 30 degrees in radians
+    float upperThreshold = 2 * PI - lowerThreshold; // Approximately 330 degrees in radians
+    std::vector<int> directionChangePoints;
 
     //--------------------------------------------------Calculates Speed-------------------------------------------------------
     for (int i = 0; i < numPointsFinal; i++) // Iterate over each trajectory point and assign a constant speed to each element
@@ -1391,13 +1391,13 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         if ((i > 1 && i < numPointsFinal - 1)) // Direction change; protected against adding duplicate points
         {
-            double dirActual = atan2(finalTrajectory[i][1] - finalTrajectory[i - 1][1], finalTrajectory[i][0] - finalTrajectory[i - 1][0]);
-            double dirSiguiente = atan2(finalTrajectory[i + 1][1] - finalTrajectory[i][1], finalTrajectory[i + 1][0] - finalTrajectory[i][0]);
-            double cambioDir = abs(dirSiguiente - dirActual);
+            double currentDir = atan2(finalTrajectory[i][1] - finalTrajectory[i - 1][1], finalTrajectory[i][0] - finalTrajectory[i - 1][0]);
+            double nextDir = atan2(finalTrajectory[i + 1][1] - finalTrajectory[i][1], finalTrajectory[i + 1][0] - finalTrajectory[i][0]);
+            double dirChange = abs(nextDir - currentDir);
 
-            if (cambioDir >= umbralInferior && cambioDir <= umbralSuperior)
+            if (dirChange >= lowerThreshold && dirChange <= upperThreshold)
             {
-                puntosCambioDireccion.push_back(i);
+                directionChangePoints.push_back(i);
             }
         }
         // printf("Punto %d Distance: %f Time: %f X: %f Y: %f PosM1: %d PosM2: %d SpeedM1: %f SpeedM2: %f\n",
@@ -1405,21 +1405,21 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         //  numberofSteps[i][0], numberofSteps[i][1], speedperStep[i][0], speedperStep[i][1]);
     }
     //--------------------------------------------------Calculates Speed-------------------------------------------------------
-    puntosCambioDireccion.push_back(numPointsFinal - 1); // Add the last trajectory point (index-based, not data count)
+    directionChangePoints.push_back(numPointsFinal - 1); // Add the last trajectory point (index-based, not data count)
 
     //--------------------------------------------------Calculates Accelararion-------------------------------------------------------
-    for (int i = 0; i < puntosCambioDireccion.size(); i++) // Accelerations per segment according to direction changes; here we know the number of segments.
+    for (int i = 0; i < directionChangePoints.size(); i++) // Accelerations per segment according to direction changes; here we know the number of segments.
     {
         double segmentTime = 0;
         double timeX = 0;
         double y1, y2, y, a1, a2, c1, c2;
 
-        int inicioSegmento = (i == 0) ? 1 : puntosCambioDireccion[i - 1] + 1; // Segment start
-        int finSegmento = puntosCambioDireccion[i];                           // Segment end
+        int segmentStart = (i == 0) ? 1 : directionChangePoints[i - 1] + 1; // Segment start
+        int segmentEnd = directionChangePoints[i];                           // Segment end
 
-        for (int i = inicioSegmento; i <= finSegmento; ++i) // Calculate the time for each segment
+        for (int i = segmentStart; i <= segmentEnd; ++i) // Calculate the time for each segment
         {
-            segmentTime = (i == inicioSegmento) ? 0 : segmentTime + timeToPosition[i];
+            segmentTime = (i == segmentStart) ? 0 : segmentTime + timeToPosition[i];
         }
 
         if (segmentTime < 0.25)
@@ -1434,27 +1434,27 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
             a2 = 35;
             c1 = 0.005;
 
-            float Y_objetivo = 5000;
-            float Y_calculado;
-            bool encontrado = false;
+            float targetY = 5000;
+            float calculatedY;
+            bool found = false;
 
-            while (!encontrado) // Search for a dynamic c1 value.
+            while (!found) // Search for a dynamic c1 value.
             {
-                double deltaSpeedM1 = abs(speedperStep[inicioSegmento + 2][0] - speedperStep[inicioSegmento + 1][0]);
-                double deltaSpeedM2 = abs(speedperStep[inicioSegmento + 2][1] - speedperStep[inicioSegmento + 1][1]);
+                double deltaSpeedM1 = abs(speedperStep[segmentStart + 2][0] - speedperStep[segmentStart + 1][0]);
+                double deltaSpeedM2 = abs(speedperStep[segmentStart + 2][1] - speedperStep[segmentStart + 1][1]);
 
                 if (deltaSpeedM1 > deltaSpeedM2) // Use the motor with the larger speed change for the calculation
                 {
-                    Y_calculado = speedperStep[inicioSegmento + 1][0] * (1 / (1 + exp(-a1 * (-c1))));
+                    calculatedY = speedperStep[segmentStart + 1][0] * (1 / (1 + exp(-a1 * (-c1))));
                 }
                 else
                 {
-                    Y_calculado = speedperStep[inicioSegmento + 1][1] * (1 / (1 + exp(-a1 * (-c1))));
+                    calculatedY = speedperStep[segmentStart + 1][1] * (1 / (1 + exp(-a1 * (-c1))));
                 }
 
-                if (abs(Y_calculado) < Y_objetivo) // if the calculated Y meets the requirement, set the flag to exit the loop
+                if (abs(calculatedY) < targetY) // if the calculated Y meets the requirement, set the flag to exit the loop
                 {
-                    encontrado = true;
+                    found = true;
                 }
                 else // If the target is not yet reached, calculate another C1
                 {
@@ -1464,9 +1464,9 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         }
         c2 = segmentTime - c1; // Calculate c2 based on c1
 
-        for (int i = inicioSegmento; i <= finSegmento; i++) // Generate s-curve accelerations for each element of the segment
+        for (int i = segmentStart; i <= segmentEnd; i++) // Generate s-curve accelerations for each element of the segment
         {
-            timeX = timeX + ((i == inicioSegmento) ? 0 : timeToPosition[i]);
+            timeX = timeX + ((i == segmentStart) ? 0 : timeToPosition[i]);
 
             y1 = 1 / (1 + exp(-a1 * (timeX - c1)));
             y2 = 1 / (1 + exp(-a2 * (timeX - c2)));
@@ -1482,7 +1482,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
     stepper2.setMaxSpeed(10000000); // Prevent interference with speed calculations
 
     // ================================================== MOVE MOTORS =============================================================
-    int umbralVelocidad = 10000;
+    int speedThreshold = 10000;
     bool runProtection = false;
     bool graveyardMove = false;
     unsigned long timetosafety = millis();
@@ -1531,7 +1531,7 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         runProtection = false;
         if (i > 1) // Activate .run function if there is a very large speed change
         {
-            if (speedperStep[i][1] - speedperStep[i - 1][1] > umbralVelocidad || speedperStep[i][0] - speedperStep[i - 1][0] > umbralVelocidad)
+            if (speedperStep[i][1] - speedperStep[i - 1][1] > speedThreshold || speedperStep[i][0] - speedperStep[i - 1][0] > speedThreshold)
             {
                 runProtection = true;
             }
@@ -1553,11 +1553,11 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
 
         if (activeElectroCount == 0) // Mechanism is making a complex movement with a different electromagnet for each segment
         {
-            if (i == (numPointsFinal - electroimanes[activeElectroEnd])) // Deactivates activeElectroInit
+            if (i == (numPointsFinal - magnetCount[activeElectroEnd])) // Deactivates activeElectroInit
             {
                 deactivateAllMagnets();
             }
-            else if (i == (numPointsFinal - electroimanes[activeElectroEnd]) + 1) // Activates activeElectroEnd in the following cycle.
+            else if (i == (numPointsFinal - magnetCount[activeElectroEnd]) + 1) // Activates activeElectroEnd in the following cycle.
             {
                 activateElectromagnetV2(activeElectroEnd, 35);
             }
@@ -1703,11 +1703,11 @@ void accelRampV3(float **finalTrajectory, int numPointsFinal, double setSpeedbyU
         numberofSteps = nullptr;
     }
     // At this point, the size and capacity are probably equal.
-    puntosCambioDireccion.clear();
+    directionChangePoints.clear();
     // Now the size is 0, but the capacity remains 1000.
 
     // If you really need to reduce the memory used by a vector after clearing or substantially modifying it:
-    puntosCambioDireccion.shrink_to_fit();
+    directionChangePoints.shrink_to_fit();
     // ================================================= FREE MEMORY ==========================================================
     driver.rms_current(HOLD_CURRENT);
     driver2.rms_current(HOLD_CURRENT);
@@ -2052,104 +2052,104 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
 // Returns the total number of points sent.
 {
     //=======Intermediate points for knight trajectory=========
-    float diferenciaX;
-    float diferenciaY;
-    float puntoInterX;
-    float puntoInterY;
+    float diffX;
+    float diffY;
+    float interPointX;
+    float interPointY;
 
     int vectInterPointsX[5] = {-1, -1, -1, -1, -1};
     int vectInterPointsY[5] = {-1, -1, -1, -1, -1};
 
     /*======================================TRAJECTORY CONDITIONS==========================================*/
 
-    diferenciaX = abs(xIni - xFin); // distance traveled in X
-    diferenciaY = abs(yIni - yFin); // distance traveled in Y
+    diffX = abs(xIni - xFin); // distance traveled in X
+    diffY = abs(yIni - yFin); // distance traveled in Y
 
     vectInterPointsX[0] = xIni;
     vectInterPointsY[0] = yIni;
 
-    if (diferenciaX > diferenciaY) // If the distance in X is greater than the distance in Y
+    if (diffX > diffY) // If the distance in X is greater than the distance in Y
     {
         if (yFin < yIni) // Electromagnet moving from top to bottom
         {
-            puntoInterX = xIni;
-            puntoInterY = yIni - 25;
+            interPointX = xIni;
+            interPointY = yIni - 25;
 
-            vectInterPointsX[1] = puntoInterX;
-            vectInterPointsY[1] = puntoInterY;
+            vectInterPointsX[1] = interPointX;
+            vectInterPointsY[1] = interPointY;
         }
         if (yFin > yIni) // Electromagnet moving from bottom to top
         {
-            puntoInterX = xIni;
-            puntoInterY = yIni + 25;
+            interPointX = xIni;
+            interPointY = yIni + 25;
 
-            vectInterPointsX[1] = puntoInterX;
-            vectInterPointsY[1] = puntoInterY;
+            vectInterPointsX[1] = interPointX;
+            vectInterPointsY[1] = interPointY;
         }
 
         if (xFin < xIni) // Electromagnet moving from right to left
         {
-            puntoInterX = xFin + 25;
+            interPointX = xFin + 25;
 
-            vectInterPointsX[2] = puntoInterX;
-            vectInterPointsY[2] = puntoInterY;
+            vectInterPointsX[2] = interPointX;
+            vectInterPointsY[2] = interPointY;
         }
         if (xFin > xIni) // Electromagnet moving from left to right
         {
-            puntoInterX = xFin - 25;
+            interPointX = xFin - 25;
 
-            vectInterPointsX[2] = puntoInterX;
-            vectInterPointsY[2] = puntoInterY;
+            vectInterPointsX[2] = interPointX;
+            vectInterPointsY[2] = interPointY;
         }
-        puntoInterY = yFin; //
+        interPointY = yFin; //
 
-        vectInterPointsX[3] = puntoInterX;
-        vectInterPointsY[3] = puntoInterY;
+        vectInterPointsX[3] = interPointX;
+        vectInterPointsY[3] = interPointY;
     }
     else // If the distance in Y is greater than the distance in X
     {
         if (xFin < xIni) // Electromagnet moving from right to left
         {
-            puntoInterX = xIni - 25;
-            puntoInterY = yIni;
+            interPointX = xIni - 25;
+            interPointY = yIni;
 
-            vectInterPointsX[1] = puntoInterX;
-            vectInterPointsY[1] = puntoInterY;
+            vectInterPointsX[1] = interPointX;
+            vectInterPointsY[1] = interPointY;
         }
         if (xFin > xIni) // Electromagnet moving from left to right
         {
-            puntoInterX = xIni + 25;
-            puntoInterY = yIni;
+            interPointX = xIni + 25;
+            interPointY = yIni;
 
-            vectInterPointsX[1] = puntoInterX;
-            vectInterPointsY[1] = puntoInterY;
+            vectInterPointsX[1] = interPointX;
+            vectInterPointsY[1] = interPointY;
         }
         if (yFin < yIni) // Electromagnet moving from top to bottom
         {
-            puntoInterY = yFin + 25;
+            interPointY = yFin + 25;
 
-            vectInterPointsX[2] = puntoInterX;
-            vectInterPointsY[2] = puntoInterY;
+            vectInterPointsX[2] = interPointX;
+            vectInterPointsY[2] = interPointY;
         }
         if (yFin > yIni) // Electromagnet moving from bottom to top
         {
-            puntoInterY = yFin - 25;
+            interPointY = yFin - 25;
 
-            vectInterPointsX[2] = puntoInterX;
-            vectInterPointsY[2] = puntoInterY;
+            vectInterPointsX[2] = interPointX;
+            vectInterPointsY[2] = interPointY;
         }
-        puntoInterX = xFin;
+        interPointX = xFin;
 
-        vectInterPointsX[3] = puntoInterX;
-        vectInterPointsY[3] = puntoInterY;
+        vectInterPointsX[3] = interPointX;
+        vectInterPointsY[3] = interPointY;
     }
 
     vectInterPointsX[4] = xFin;
     vectInterPointsY[4] = yFin;
 
-    if (diferenciaX < diferenciaY)
+    if (diffX < diffY)
     {
-        if (diferenciaX == 50)
+        if (diffX == 50)
         {
             vectInterPointsX[2] = vectInterPointsX[1];
             vectInterPointsY[2] = yFin;
@@ -2160,7 +2160,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsX[4] = -1;
             vectInterPointsY[4] = -1;
         }
-        if (diferenciaX == 0)
+        if (diffX == 0)
         {
             // The case where they are in the same column of the board
             if (xIni > 0) // This condition avoids the motors
@@ -2194,9 +2194,9 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
         }
     }
 
-    if (diferenciaX > diferenciaY)
+    if (diffX > diffY)
     {
-        if (diferenciaY == 50)
+        if (diffY == 50)
         {
             vectInterPointsX[2] = xFin;
             vectInterPointsY[2] = vectInterPointsY[1];
@@ -2207,7 +2207,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             vectInterPointsX[4] = -1;
             vectInterPointsY[4] = -1;
         }
-        if (diferenciaY == 0)
+        if (diffY == 0)
         {
             // The case where they are in the same column of the board
             if (yIni > 0) // This condition avoids the motors
@@ -2240,7 +2240,7 @@ void moveOnTheLinev2Sc(double xIni, double yIni, double xFin, double yFin, int &
             }
         }
     }
-    if (diferenciaX == 50 && diferenciaY == 50)
+    if (diffX == 50 && diffY == 50)
     {
         if (xIni < xFin)
         {
@@ -3135,8 +3135,8 @@ void detectChessBoard(bool sensVal[10][10])
 
         readRawSensors(sensVal);
 
-        int tiempoEntreLecturas = (5 * attempts);
-        delay(tiempoEntreLecturas);
+        int timeBetweenReadings = (5 * attempts);
+        delay(timeBetweenReadings);
 
         readRawSensors(sensValAux);
         for (int i = 1; i < 10; i++)
@@ -4435,10 +4435,10 @@ void soundHandler(int soundMode)
     }
 }
 
-int findNearestEmptyPosition(int filaActualAux, int colActualAux, char matrixToSearch[10][10])
+int findNearestEmptyPosition(int currentRowAux, int currentColAux, char matrixToSearch[10][10])
 {
-    int filaActual = filaActualAux; // Current row being searched around
-    int colActual = colActualAux;   // Current column being searched around
+    int currentRow = currentRowAux; // Current row being searched around
+    int currentCol = currentColAux;   // Current column being searched around
 
     int rango = 1; // Initialize the search range
 
@@ -4449,17 +4449,17 @@ int findNearestEmptyPosition(int filaActualAux, int colActualAux, char matrixToS
         {
             for (int i = -rango; i <= rango; ++i) // explore column
             {
-                int nuevaFila = filaActual + i;
-                int nuevaCol = colActual + j;
+                int newRow = currentRow + i;
+                int newCol = currentCol + j;
 
                 // Ensure the new position is within the matrix bounds and not at a corner
-                if (nuevaFila >= 0 && nuevaFila < 10 && nuevaCol >= 0 && nuevaCol < 10 && !(nuevaFila == 0 && nuevaCol == 0) && !(nuevaFila == 0 && nuevaCol == 9) && !(nuevaFila == 9 && nuevaCol == 0) && !(nuevaFila == 9 && nuevaCol == 9))
+                if (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10 && !(newRow == 0 && newCol == 0) && !(newRow == 0 && newCol == 9) && !(newRow == 9 && newCol == 0) && !(newRow == 9 && newCol == 9))
                 {
                     // Check if the position is empty
-                    if (matrixToSearch[nuevaFila][nuevaCol] == '.' || sensorMatrixSc[nuevaFila][nuevaCol] == 1)
+                    if (matrixToSearch[newRow][newCol] == '.' || sensorMatrixSc[newRow][newCol] == 1)
                     {
                         // Found the nearest empty position
-                        return (nuevaFila * 10) + nuevaCol; // Return the nearest position if only one is needed
+                        return (newRow * 10) + newCol; // Return the nearest position if only one is needed
                     }
                 }
             }
@@ -4477,10 +4477,10 @@ int findNearestEmptyPosition(int filaActualAux, int colActualAux, char matrixToS
     }
 }
 
-int findNearestPiecePosition(int filaActualAux, int colActualAux, char piezaObjetivo, char matrixToSearch[10][10])
+int findNearestPiecePosition(int currentRowAux, int currentColAux, char targetPiece, char matrixToSearch[10][10])
 {
-    int filaActual = filaActualAux; // Current row being searched around
-    int colActual = colActualAux;   // Current column being searched around
+    int currentRow = currentRowAux; // Current row being searched around
+    int currentCol = currentColAux;   // Current column being searched around
 
     int rango = 1; // Initialize the search range
 
@@ -4491,17 +4491,17 @@ int findNearestPiecePosition(int filaActualAux, int colActualAux, char piezaObje
         {
             for (int i = -rango; i <= rango; ++i) // explore column
             {
-                int nuevaFila = filaActual + i;
-                int nuevaCol = colActual + j;
+                int newRow = currentRow + i;
+                int newCol = currentCol + j;
 
                 // Ensure the new position is within the matrix bounds and not at a corner
-                if (nuevaFila >= 0 && nuevaFila < 10 && nuevaCol >= 0 && nuevaCol < 10 && !(nuevaFila == 0 && nuevaCol == 0) && !(nuevaFila == 0 && nuevaCol == 9) && !(nuevaFila == 9 && nuevaCol == 0) && !(nuevaFila == 9 && nuevaCol == 9))
+                if (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10 && !(newRow == 0 && newCol == 0) && !(newRow == 0 && newCol == 9) && !(newRow == 9 && newCol == 0) && !(newRow == 9 && newCol == 9))
                 {
                     // Check if the position holds the target piece
-                    if (targetMatrix[nuevaFila][nuevaCol] != 'L' && matrixToSearch[nuevaFila][nuevaCol] == piezaObjetivo && sensorMatrixSc[nuevaFila][nuevaCol] == 0)
+                    if (targetMatrix[newRow][newCol] != 'L' && matrixToSearch[newRow][newCol] == targetPiece && sensorMatrixSc[newRow][newCol] == 0)
                     {
                         // Found the nearest matching position
-                        return (nuevaFila * 10) + nuevaCol; // Return the nearest position if only one is needed
+                        return (newRow * 10) + newCol; // Return the nearest position if only one is needed
                     }
                 }
             }
