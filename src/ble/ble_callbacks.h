@@ -51,6 +51,9 @@
 
 #include "BLE.h"       // NimBLE types, BLECharacteristic, Fragment, String
 #include "ble_state.h" // extern global variable declarations
+#ifdef ESP32
+#include "esp_ota_ops.h" // esp_ota_handle_t, esp_ota_begin(), etc.
+#endif
 
 // ---------------------------------------------------------------------------
 // Version
