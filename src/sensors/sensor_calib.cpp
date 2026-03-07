@@ -22,6 +22,7 @@
 #include <Arduino.h>
 #include "../../include/config.h"
 #include "sensor_state.h"
+#include "../mech/mech_state.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // sensorOffsetCalib()
