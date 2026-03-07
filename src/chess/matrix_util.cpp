@@ -46,7 +46,7 @@
  *
  * Side effects: writes to Serial.
  */
-void printGenericMatrix(char matrix[rows][cols], int numRows, int numCols)
+void printGenericMatrix(char matrix[][10], int numRows, int numCols)
 {
     char vectNumeros[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     char matrixAux[numRows + 1][numCols + 1];
