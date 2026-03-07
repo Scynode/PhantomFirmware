@@ -63,6 +63,8 @@
 #include "../sensors/sensor_state.h"
 #include "../mech/mech_state.h"
 #include "BLE.h"
+#include <CuteBuzzerSounds.h>
+#include "../app/app_globals.h"
 
 /*
  * simplifiedMovement()

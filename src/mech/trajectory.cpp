@@ -265,6 +265,7 @@ int movementType(int squareRowInit, int squareColInit, int squareRowEnd, int squ
     {
         return 1;
     }
+    return 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

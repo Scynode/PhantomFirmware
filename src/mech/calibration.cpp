@@ -51,6 +51,7 @@
 #include "../../include/config.h"
 #include "mech_state.h"
 #include "../sensors/sensor_state.h"
+#include <CuteBuzzerSounds.h>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // mechanicalCalibration()

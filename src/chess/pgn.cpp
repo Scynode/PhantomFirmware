@@ -17,6 +17,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "chess_state.h"
+#include "../sensors/sensor_state.h"
 #include "BLE.h"
 #include <vector>
 
